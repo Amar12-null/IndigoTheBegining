@@ -1,4 +1,5 @@
 using UnityEngine;
+using Indigo.UI;
 
 public class ThirdPersonCamera : MonoBehaviour
 {
@@ -21,8 +22,11 @@ public class ThirdPersonCamera : MonoBehaviour
 
     void Update()
     {
-        yaw += Input.GetAxis("Mouse X") * mouseSensitivity;
-        pitch -= Input.GetAxis("Mouse Y") * mouseSensitivity;
+        if (UIEvents.IsPaused) return;
+
+        float sens = SettingsService.MouseSensitivity;
+        yaw += Input.GetAxis("Mouse X") * sens;
+        pitch -= Input.GetAxis("Mouse Y") * sens;
         pitch = Mathf.Clamp(pitch, minY, maxY);
 
         transform.position = target.position + Vector3.up * 2.8f;
