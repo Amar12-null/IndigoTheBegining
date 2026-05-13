@@ -1,8 +1,10 @@
 using UnityEngine;
+using Indigo.UI;
 
 public class PortafilterPickup : MonoBehaviour
 {
     public Transform handPoint;
+    public string itemName = "Portafilter";
 
     private bool isOnMachine = false;
     private bool playerNear = false;
@@ -34,7 +36,7 @@ void Update()
     if (isOnMachine) return;
 
     isPickedUp = true;
-     
+
 
     transform.SetParent(handPoint);
     transform.localPosition = Vector3.zero;
@@ -43,6 +45,9 @@ void Update()
     Collider col = GetComponent<Collider>();
     if (col != null)
         col.enabled = false;
+
+    UIEvents.SetHeldItem(itemName, currentState.ToString());
+    UIEvents.ClearPrompt();
 }
 public void PickUpFromMachine()
 {
@@ -52,6 +57,9 @@ public void PickUpFromMachine()
     transform.SetParent(handPoint);
     transform.localPosition = Vector3.zero;
     transform.localRotation = Quaternion.identity;
+
+    UIEvents.SetHeldItem(itemName, currentState.ToString());
+    UIEvents.ClearPrompt();
 }
 
     public bool IsPickedUp()
@@ -75,6 +83,7 @@ public void PickUpFromMachine()
     if (col != null)
         col.enabled = true;
 
+    UIEvents.ClearHeldItem();
     Debug.Log("Portafilter parent: " + transform.parent.name);
 }
 
@@ -90,6 +99,8 @@ public void ReturnToHome()
     Collider col = GetComponent<Collider>();
     if (col != null)
         col.enabled = true;
+
+    UIEvents.ClearHeldItem();
 }
 
 
@@ -100,12 +111,19 @@ public void ReturnToHome()
     private void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Player"))
+        {
             playerNear = true;
+            if (!isPickedUp && !isOnMachine)
+                UIEvents.SetPrompt("E", "Pick up " + itemName);
+        }
     }
 
     private void OnTriggerExit(Collider other)
     {
         if (other.CompareTag("Player"))
+        {
             playerNear = false;
+            UIEvents.ClearPrompt();
+        }
     }
 }
