@@ -9,6 +9,7 @@ namespace Indigo.UI
         private GameObject    _promptKey;
         private Text          _promptKeyLabel;
         private Text          _promptText;
+        private UIPulse       _promptPulse;
 
         private RectTransform _heldPanel;
         private Text          _heldTitle;
@@ -32,7 +33,7 @@ namespace Indigo.UI
 
         void BuildPrompt(RectTransform parent)
         {
-            var go = UIFactory.Panel("InteractionPrompt", parent, UITheme.Background);
+            var go = UIFactory.Panel("InteractionPrompt", parent, UITheme.Background, 14);
             _promptPanel = (RectTransform)go.transform;
             _promptPanel.anchorMin = new Vector2(0.5f, 0f);
             _promptPanel.anchorMax = new Vector2(0.5f, 0f);
@@ -65,12 +66,19 @@ namespace Indigo.UI
             var textLayout = _promptText.gameObject.AddComponent<LayoutElement>();
             textLayout.preferredHeight = 36;
 
+            _promptPulse = go.AddComponent<UIPulse>();
+            _promptPulse.pulseAlpha = true;
+            _promptPulse.minAlpha   = 0.82f;
+            _promptPulse.maxAlpha   = 1f;
+            _promptPulse.pulseScale = false;
+            _promptPulse.speed      = 2.6f;
+
             _promptPanel.gameObject.SetActive(false);
         }
 
         void BuildHeldCard(RectTransform parent)
         {
-            var go = UIFactory.Panel("HeldItemCard", parent, UITheme.Background);
+            var go = UIFactory.Panel("HeldItemCard", parent, UITheme.Background, 16);
             _heldPanel = (RectTransform)go.transform;
             _heldPanel.anchorMin = new Vector2(1f, 0f);
             _heldPanel.anchorMax = new Vector2(1f, 0f);
@@ -78,7 +86,9 @@ namespace Indigo.UI
             _heldPanel.anchoredPosition = new Vector2(-24, 24);
             _heldPanel.sizeDelta = new Vector2(240, 76);
 
-            var accent = UIFactory.Panel("Accent", go.transform, UITheme.Accent);
+            UIFactory.AddDropShadow(_heldPanel, new Vector2(0, -4), 0.35f, 18, 10f);
+
+            var accent = UIFactory.Panel("Accent", go.transform, UITheme.Accent, 2);
             var aRt = (RectTransform)accent.transform;
             aRt.anchorMin = new Vector2(0, 0);
             aRt.anchorMax = new Vector2(0, 1);

@@ -11,7 +11,8 @@ namespace Indigo.UI
         public string GameTitle = "INDIGO";
         public string Subtitle  = "The Beginning";
 
-        private SettingsPanel _settings;
+        SettingsPanel _settings;
+        CanvasGroup   _cg;
 
         void Awake()
         {
@@ -19,6 +20,7 @@ namespace Indigo.UI
             Cursor.visible   = true;
             Cursor.lockState = CursorLockMode.None;
             BuildUI();
+            StartCoroutine(UIAnimator.FadeScaleIn(_cg, (RectTransform)_cg.transform, 0.35f, 0.985f));
         }
 
         void BuildUI()
@@ -27,8 +29,9 @@ namespace Indigo.UI
 
             var canvasGo = new GameObject("MainMenu_Canvas",
                 typeof(RectTransform), typeof(Canvas),
-                typeof(CanvasScaler), typeof(GraphicRaycaster));
+                typeof(CanvasScaler), typeof(GraphicRaycaster), typeof(CanvasGroup));
             canvasGo.transform.SetParent(transform, false);
+            _cg = canvasGo.GetComponent<CanvasGroup>();
 
             var canvas = canvasGo.GetComponent<Canvas>();
             canvas.renderMode  = RenderMode.ScreenSpaceOverlay;
@@ -45,7 +48,7 @@ namespace Indigo.UI
             var bg = UIFactory.Panel("Background", root, new Color(0.05f, 0.06f, 0.09f, 1f));
             UIFactory.StretchToParent((RectTransform)bg.transform);
 
-            var accentBar = UIFactory.Panel("AccentBar", root, UITheme.Accent);
+            var accentBar = UIFactory.Panel("AccentBar", root, UITheme.Accent, 4);
             var abRt = (RectTransform)accentBar.transform;
             abRt.anchorMin = new Vector2(0, 0.5f);
             abRt.anchorMax = new Vector2(0, 0.5f);
@@ -60,7 +63,26 @@ namespace Indigo.UI
             tRt.anchorMax = new Vector2(0, 0.5f);
             tRt.pivot     = new Vector2(0, 0.5f);
             tRt.sizeDelta = new Vector2(800, 80);
-            tRt.anchoredPosition = new Vector2(200, 140);
+            tRt.anchoredPosition = new Vector2(200, 150);
+
+            var underline = UIFactory.Panel("TitleUnderline", root, UITheme.Accent, 2);
+            var unRt = (RectTransform)underline.transform;
+            unRt.anchorMin = new Vector2(0, 0.5f);
+            unRt.anchorMax = new Vector2(0, 0.5f);
+            unRt.pivot     = new Vector2(0, 0.5f);
+            unRt.sizeDelta = new Vector2(240, 4);
+            unRt.anchoredPosition = new Vector2(200, 108);
+            var pulse = underline.AddComponent<UIPulse>();
+            pulse.scaleTarget = unRt;
+            pulse.pulseAlpha  = true;
+            pulse.minAlpha    = 0.55f;
+            pulse.maxAlpha    = 1f;
+            pulse.pulseScale  = true;
+            pulse.scaleX      = true;
+            pulse.scaleY      = false;
+            pulse.minScale    = 0.65f;
+            pulse.maxScale    = 1.0f;
+            pulse.speed       = 1.6f;
 
             var sub = UIFactory.Label("Subtitle", root, Subtitle, UITheme.FontHeader, UITheme.Accent, TextAnchor.MiddleLeft);
             var sRt = sub.rectTransform;
@@ -68,7 +90,7 @@ namespace Indigo.UI
             sRt.anchorMax = new Vector2(0, 0.5f);
             sRt.pivot     = new Vector2(0, 0.5f);
             sRt.sizeDelta = new Vector2(800, 40);
-            sRt.anchoredPosition = new Vector2(200, 90);
+            sRt.anchoredPosition = new Vector2(200, 70);
 
             var buttons = new GameObject("Buttons", typeof(RectTransform));
             buttons.transform.SetParent(root, false);
@@ -77,15 +99,15 @@ namespace Indigo.UI
             bRt.anchorMax = new Vector2(0, 0.5f);
             bRt.pivot     = new Vector2(0, 0.5f);
             bRt.sizeDelta = new Vector2(260, 240);
-            bRt.anchoredPosition = new Vector2(200, -60);
+            bRt.anchoredPosition = new Vector2(200, -80);
 
             var layout = buttons.AddComponent<VerticalLayoutGroup>();
             layout.spacing  = 12;
             layout.padding  = new RectOffset(0, 0, 0, 0);
-            layout.childAlignment       = TextAnchor.UpperLeft;
-            layout.childControlWidth    = true;
-            layout.childControlHeight   = false;
-            layout.childForceExpandWidth  = true;
+            layout.childAlignment        = TextAnchor.UpperLeft;
+            layout.childControlWidth     = true;
+            layout.childControlHeight    = false;
+            layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
 
             AddMenuButton(buttons.transform, "Play",     OnPlay);

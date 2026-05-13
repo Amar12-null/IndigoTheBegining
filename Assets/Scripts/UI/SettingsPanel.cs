@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -5,25 +6,41 @@ namespace Indigo.UI
 {
     public class SettingsPanel : MonoBehaviour
     {
-        private GameObject _root;
-        private System.Action _onBack;
+        GameObject       _root;
+        CanvasGroup      _cg;
+        RectTransform    _cardRt;
+        UIBackgroundBlur _blur;
+        System.Action    _onBack;
+        Coroutine        _animCo;
+        bool             _open, _closing;
 
-        public bool IsOpen => _root != null && _root.activeSelf;
+        public bool IsOpen => _open && !_closing;
 
         public void Build(RectTransform parent, System.Action onBack)
         {
             _onBack = onBack;
 
-            var overlay = UIFactory.Panel("SettingsOverlay", parent, new Color(0, 0, 0, 0.55f));
-            UIFactory.StretchToParent((RectTransform)overlay.transform);
-            _root = overlay;
+            var root = new GameObject("SettingsOverlay", typeof(RectTransform), typeof(CanvasGroup));
+            root.transform.SetParent(parent, false);
+            UIFactory.StretchToParent((RectTransform)root.transform);
+            _root = root;
+            _cg = root.GetComponent<CanvasGroup>();
 
-            var card = UIFactory.Panel("Card", overlay.transform, UITheme.Panel);
-            var cardRt = (RectTransform)card.transform;
-            cardRt.anchorMin = new Vector2(0.5f, 0.5f);
-            cardRt.anchorMax = new Vector2(0.5f, 0.5f);
-            cardRt.pivot     = new Vector2(0.5f, 0.5f);
-            cardRt.sizeDelta = new Vector2(520, 460);
+            var blurGo = new GameObject("Blur", typeof(RectTransform), typeof(CanvasRenderer), typeof(RawImage));
+            blurGo.transform.SetParent(root.transform, false);
+            UIFactory.StretchToParent((RectTransform)blurGo.transform);
+            _blur = blurGo.AddComponent<UIBackgroundBlur>();
+
+            var dim = UIFactory.Panel("Dim", root.transform, new Color(0f, 0f, 0f, 0.45f));
+            UIFactory.StretchToParent((RectTransform)dim.transform);
+
+            var card = UIFactory.Panel("Card", root.transform, UITheme.Panel, 20);
+            _cardRt = (RectTransform)card.transform;
+            _cardRt.anchorMin = new Vector2(0.5f, 0.5f);
+            _cardRt.anchorMax = new Vector2(0.5f, 0.5f);
+            _cardRt.pivot     = new Vector2(0.5f, 0.5f);
+            _cardRt.sizeDelta = new Vector2(520, 460);
+            UIFactory.AddDropShadow(_cardRt, new Vector2(0, -8), 0.45f, 24, 18f);
 
             var title = UIFactory.Label("Title", card.transform, "SETTINGS", UITheme.FontHeader, UITheme.TextPrimary, TextAnchor.UpperLeft);
             title.fontStyle = FontStyle.Bold;
@@ -34,7 +51,7 @@ namespace Indigo.UI
             titleRt.anchoredPosition = new Vector2(32, -28);
             titleRt.sizeDelta = new Vector2(-64, 40);
 
-            var accent = UIFactory.Panel("Accent", card.transform, UITheme.Accent);
+            var accent = UIFactory.Panel("Accent", card.transform, UITheme.Accent, 2);
             var aRt = (RectTransform)accent.transform;
             aRt.anchorMin = new Vector2(0, 1);
             aRt.anchorMax = new Vector2(0, 1);
@@ -59,6 +76,7 @@ namespace Indigo.UI
             backRt.anchoredPosition = new Vector2(0, 32);
             back.onClick.AddListener(Close);
 
+            _cg.alpha = 0f;
             _root.SetActive(false);
         }
 
@@ -133,11 +151,32 @@ namespace Indigo.UI
             toggle.onValueChanged.AddListener(v => onChange(v));
         }
 
-        public void Open() { _root.SetActive(true); }
+        public void Open()
+        {
+            if (_open) return;
+            _open = true;
+            _closing = false;
+            _cg.alpha = 0f;
+            _root.SetActive(true);
+            if (_blur != null) _blur.Capture();
+            if (_animCo != null) StopCoroutine(_animCo);
+            _animCo = StartCoroutine(UIAnimator.FadeScaleIn(_cg, _cardRt, 0.18f));
+        }
 
         public void Close()
         {
+            if (!_open || _closing) return;
+            _closing = true;
+            if (_animCo != null) StopCoroutine(_animCo);
+            _animCo = StartCoroutine(CloseRoutine());
+        }
+
+        IEnumerator CloseRoutine()
+        {
+            yield return UIAnimator.FadeScaleOut(_cg, _cardRt, 0.14f);
             _root.SetActive(false);
+            _open = false;
+            _closing = false;
             _onBack?.Invoke();
         }
     }
