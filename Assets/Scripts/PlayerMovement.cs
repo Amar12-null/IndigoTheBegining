@@ -1,4 +1,5 @@
 using UnityEngine;
+using Indigo.UI;
 
 [RequireComponent(typeof(CharacterController))]
 public class PlayerMovement : MonoBehaviour
@@ -42,6 +43,7 @@ public class PlayerMovement : MonoBehaviour
     void Update()
     {
         if (!canMove) return;
+        if (UIEvents.IsPaused) return;
 
         float horizontal = Input.GetAxis("Horizontal");
         float vertical = Input.GetAxis("Vertical");
