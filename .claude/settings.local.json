@@ -1,7 +1,15 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(git commit *)",
+      "Bash(git pull *)",
+      "Bash(git merge *)",
+      "Bash(git push *)",
+      "Bash(mkdir -p \"Assets/Scripts/Customers\")",
+      "Bash(mkdir -p \"Assets/Scripts/Customers/UI\")",
+      "Bash(ls \"C:/Users/Merdic/.claude/projects/c--Users-Merdic-Desktop-IndigoTheBegining/memory/\" 2>&1)",
+      "Read(//c/Users/Merdic/.claude/projects/c--Users-Merdic-Desktop-IndigoTheBegining/memory/**)"
     ]
   }
 }
