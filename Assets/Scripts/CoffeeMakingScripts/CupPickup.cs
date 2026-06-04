@@ -11,11 +11,11 @@ public class CupPickup : MonoBehaviour
     public bool isOnMachine = false;
     public bool isFilled = false;
 
-    private Vector3 originalScale;
+    
 
     void Start()
     {
-        originalScale = transform.localScale;
+        
         
         if (coffeeLiquid != null) coffeeLiquid.SetActive(false);
         if (saucer != null) saucer.SetActive(false);
@@ -30,7 +30,7 @@ public class CupPickup : MonoBehaviour
         transform.SetParent(handPoint);
         transform.localPosition = Vector3.zero;
         transform.localRotation = Quaternion.identity;
-        transform.localScale = originalScale;
+        
     }
 
     public void PutOnMachine(Transform machineSlot)
@@ -41,7 +41,7 @@ public class CupPickup : MonoBehaviour
         transform.SetParent(machineSlot);
         transform.localPosition = Vector3.zero;
         transform.localRotation = Quaternion.identity;
-        transform.localScale = originalScale;
+       
     }
 
     public void FillCoffee()
@@ -58,8 +58,10 @@ public class CupPickup : MonoBehaviour
         transform.SetParent(traySlot);
         transform.localPosition = Vector3.zero;
         transform.localRotation = Quaternion.identity;
-        transform.localScale = originalScale;
-
-        if (saucer != null) saucer.SetActive(true);
+    
+        if (saucer != null) 
+        {
+            saucer.SetActive(true);
+        }
     }
 }

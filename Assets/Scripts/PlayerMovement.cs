@@ -18,8 +18,7 @@ public class PlayerMovement : MonoBehaviour
     public float gravity = 10f;
 
     public float defaultHeight = 3.9f;
-    public float crouchHeight = 1f;
-    public float crouchSpeed = 1.5f;
+   
 
     private CharacterController characterController;
     private Vector3 moveDirection;
@@ -33,11 +32,7 @@ public class PlayerMovement : MonoBehaviour
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
         
-        // Pokušava automatski naći skriptu kamere ako zaboraviš prevući u inspektoru
-        if (cameraScript == null && cameraPivot != null)
-        {
-            cameraScript = cameraPivot.GetComponent<ThirdPersonCamera>();
-        }
+        
     }
 
     void Update()
@@ -62,33 +57,43 @@ public class PlayerMovement : MonoBehaviour
         if (move.magnitude > 1f) move.Normalize();
 
         bool isRunning = Input.GetKey(KeyCode.LeftShift);
-        bool isCrouching = Input.GetKey(KeyCode.R);
-        float currentSpeed = isCrouching ? crouchSpeed : (isRunning ? runSpeed : walkSpeed);
+        
+        float currentSpeed = isRunning ? runSpeed : walkSpeed;
 
         moveDirection = move * currentSpeed;
-
-        // --- KLJUČNA PROMJENA: ROTACIJA MODELA ZAVISNO OD KAMERE ---
+    
+        //  ROTACIJA MODELA ZAVISNO OD KAMERE 
         if (cameraScript != null && cameraScript.isFirstPerson)
         {
-            // FIRST PERSON: Model se NE vrti po WASD tipkama. 
-            // On striktno gleda naprijed, tačno tamo gdje i kamera.
+            
             playerModel.forward = camForward;
         }
         else
         {
-            // THIRD PERSON: Staro ponašanje (model se vrti prema tome gdje ideš)
+            //model se vrti prema tome gdje ideš
             if (move.magnitude > 0.1f)
             {
                 playerModel.forward = move;
             }
         }
 
-        // Animacija
-        float animSpeed = new Vector2(horizontal, vertical).magnitude;
-        AllInOne.SetFloat("Speed", animSpeed);
+       // Animacija
+        float inputMagnitude = Mathf.Clamp01(new Vector2(horizontal, vertical).magnitude);
+        float animMultiplier = 0f; // 0 znači da animacija stoji (Idle)
+
+        if (inputMagnitude > 0.1f) // Ako se igrač kreće
+        {
+           
+             if (isRunning) 
+                animMultiplier = 3f; // Trčanje: animacija se ubrzava za 50%
+            else 
+                animMultiplier = 1.3f; // Hodanje: normalna brzina animacije
+        }
+
+        AllInOne.SetFloat("Speed", animMultiplier);
         AllInOne.SetFloat("Vertical", vertical);
 
-        characterController.height = isCrouching ? crouchHeight : defaultHeight;
+        characterController.height =  defaultHeight;
 
         if (characterController.isGrounded)
         {

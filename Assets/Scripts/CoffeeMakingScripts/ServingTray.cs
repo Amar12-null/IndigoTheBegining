@@ -4,21 +4,20 @@ public class ServingTray : MonoBehaviour
 {
     public Transform[] traySlots; 
     public Transform playerHand;       // Desna ruka (za provjeru držiš li kafu)
-    public Transform leftHandPoint;    // NOVO: Lijeva ruka (gdje ide tacna)
-    public Transform trayHomePosition; // NOVO: Mjesto na stolu gdje tacna stoji
+    public Transform leftHandPoint;    // Lijeva ruka (gdje ide tacna)
+    public Transform trayHomePosition; // Mjesto na stolu gdje tacna stoji
 
     public bool isPickedUp = false;
-    private bool playerNear = false;
     private Vector3 originalScale;
 
     void Start()
     {
+        // Pamtimo originalnu veličinu tacne kako se ne bi poremetila
         originalScale = transform.localScale;
     }
 
-    void Update()
-{
-    if (playerNear && Input.GetKeyDown(KeyCode.E))
+    // Ovu metodu sada poziva nova TrayStation skripta kada igrač pritisne 'E'
+    public void InteractWithTray()
     {
         CupPickup heldCup = playerHand.GetComponentInChildren<CupPickup>();
         PortafilterPickup heldPortafilter = playerHand.GetComponentInChildren<PortafilterPickup>();
@@ -32,7 +31,6 @@ public class ServingTray : MonoBehaviour
                 if (slot.childCount == 0) // Nađi prazno mjesto
                 {
                     emptySlot = slot;
-                    
                     break; 
                 }
             }
@@ -40,9 +38,10 @@ public class ServingTray : MonoBehaviour
             if (emptySlot != null)
             {
                 heldCup.PutOnTray(emptySlot);
-                playerHand.GetComponentInParent<ArmOverride>().isHoldingRight = false;
                 
-                
+                // Oslobađamo desnu ruku (ugasimo override) jer smo spustili kafu iz nje
+                ArmOverride arm = playerHand.GetComponentInParent<ArmOverride>();
+                if (arm != null) arm.isHoldingRight = false;
                 
                 Debug.Log("Kafa je servirana na tacnu!");
             }
@@ -62,12 +61,12 @@ public class ServingTray : MonoBehaviour
             PickUpTray();
         }
     }
-}
 
     void PickUpTray()
     {
         isPickedUp = true;
         
+        // Postavljamo tacnu u lijevu ruku
         transform.SetParent(leftHandPoint);
         transform.localPosition = Vector3.zero;
         transform.localRotation = Quaternion.identity;
@@ -82,22 +81,14 @@ public class ServingTray : MonoBehaviour
     {
         isPickedUp = false;
         
+        // Vraćamo tacnu na home poziciju (sto)
         transform.SetParent(trayHomePosition);
         transform.localPosition = Vector3.zero;
         transform.localRotation = Quaternion.identity;
         transform.localScale = originalScale;
 
-        // Spuštamo lijevu ruku
-        leftHandPoint.GetComponentInParent<ArmOverride>().isHoldingLeft = false;
-    }
-
-    private void OnTriggerEnter(Collider other)
-    {
-        if (other.CompareTag("Player")) playerNear = true;
-    }
-
-    private void OnTriggerExit(Collider other)
-    {
-        if (other.CompareTag("Player")) playerNear = false;
+        // Spuštamo lijevu ruku (gasimo override za tacnu)
+        ArmOverride arm = leftHandPoint.GetComponentInParent<ArmOverride>();
+        if (arm != null) arm.isHoldingLeft = false;
     }
 }
