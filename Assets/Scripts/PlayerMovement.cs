@@ -9,31 +9,30 @@ public class PlayerMovement : MonoBehaviour
     public Camera playerCamera;
     public Transform cameraPivot;
 
+    // NOVO: Referenca na našu kameru da znamo da li je First Person!
+    public ThirdPersonCamera cameraScript;
+
     public float walkSpeed = 2f;
     public float runSpeed = 4f;
     public float jumpPower = 7f;
     public float gravity = 10f;
 
-    public float lookSpeed = 2f;
-    public float lookXLimit = 45f;
-
-    public float defaultHeight = 2f;
-    public float crouchHeight = 1f;
-    public float crouchSpeed = 1.5f;
+    public float defaultHeight = 3.9f;
+   
 
     private CharacterController characterController;
     private Vector3 moveDirection;
     private float verticalVelocity;
-    
 
     private bool canMove = true;
 
     void Start()
     {
         characterController = GetComponent<CharacterController>();
-
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+        
+        
     }
 
     void Update()
@@ -44,7 +43,6 @@ public class PlayerMovement : MonoBehaviour
         float horizontal = Input.GetAxis("Horizontal");
         float vertical = Input.GetAxis("Vertical");
 
-        // Kamera smjer
         Vector3 camForward = playerCamera.transform.forward;
         Vector3 camRight = playerCamera.transform.right;
 
@@ -54,41 +52,53 @@ public class PlayerMovement : MonoBehaviour
         camForward.Normalize();
         camRight.Normalize();
 
-        // Kretanje u smjeru kamere
         Vector3 move = camForward * vertical + camRight * horizontal;
 
-        if (move.magnitude > 1f)
-            move.Normalize();
+        if (move.magnitude > 1f) move.Normalize();
 
         bool isRunning = Input.GetKey(KeyCode.LeftShift);
-        bool isCrouching = Input.GetKey(KeyCode.R);
-
-        float currentSpeed = isCrouching ? crouchSpeed : (isRunning ? runSpeed : walkSpeed);
+        
+        float currentSpeed = isRunning ? runSpeed : walkSpeed;
 
         moveDirection = move * currentSpeed;
-
-        // Okretanje modela u smjeru kretanja
-        if (move.magnitude > 0.1f)
+    
+        //  ROTACIJA MODELA ZAVISNO OD KAMERE 
+        if (cameraScript != null && cameraScript.isFirstPerson)
         {
-            playerModel.forward = move;
+            
+            playerModel.forward = camForward;
+        }
+        else
+        {
+            //model se vrti prema tome gdje ideš
+            if (move.magnitude > 0.1f)
+            {
+                playerModel.forward = move;
+            }
         }
 
-        // Animacija
-        float animSpeed = new Vector2(horizontal, vertical).magnitude;
-        AllInOne.SetFloat("Speed", animSpeed);
+       // Animacija
+        float inputMagnitude = Mathf.Clamp01(new Vector2(horizontal, vertical).magnitude);
+        float animMultiplier = 0f; // 0 znači da animacija stoji (Idle)
+
+        if (inputMagnitude > 0.1f) // Ako se igrač kreće
+        {
+           
+             if (isRunning) 
+                animMultiplier = 3f; // Trčanje: animacija se ubrzava za 50%
+            else 
+                animMultiplier = 1.3f; // Hodanje: normalna brzina animacije
+        }
+
+        AllInOne.SetFloat("Speed", animMultiplier);
         AllInOne.SetFloat("Vertical", vertical);
 
-        // Crouch
-        characterController.height = isCrouching ? crouchHeight : defaultHeight;
+        characterController.height =  defaultHeight;
 
-        // Skok i gravitacija
         if (characterController.isGrounded)
         {
-            if (verticalVelocity < 0)
-                verticalVelocity = -2f;
-
-            if (Input.GetButtonDown("Jump"))
-                verticalVelocity = jumpPower;
+            if (verticalVelocity < 0) verticalVelocity = -2f;
+            if (Input.GetButtonDown("Jump")) verticalVelocity = jumpPower;
         }
         else
         {
@@ -96,9 +106,6 @@ public class PlayerMovement : MonoBehaviour
         }
 
         moveDirection.y = verticalVelocity;
-
         characterController.Move(moveDirection * Time.deltaTime);
-
-       
     }
 }
