@@ -1,4 +1,5 @@
 using UnityEngine;
+using Indigo.UI; // 1. Dodali smo ovo da kamera može čitati kolegine postavke
 
 public class ThirdPersonCamera : MonoBehaviour
 {
@@ -7,9 +8,9 @@ public class ThirdPersonCamera : MonoBehaviour
     public Transform playerBody;   
     
     [Header("Skrivanje Glave")]
-    public Transform headBone;     // NOVO: Ovdje ćemo uvući kost glave tvog lika
+    public Transform headBone;     
 
-    public float mouseSensitivity = 2f;
+    // NAPOMENA: Obrisali smo 'public float mouseSensitivity' jer to sada kontroliše UI!
     public float minY = -30f;
     public float maxY = 60f;
 
@@ -24,6 +25,8 @@ public class ThirdPersonCamera : MonoBehaviour
 
     private float yaw;
     private float pitch;
+    
+    private bool canLook = false; 
 
     void Start()
     {
@@ -31,11 +34,23 @@ public class ThirdPersonCamera : MonoBehaviour
         {
             playerBody = target.root; 
         }
+
+        GameManager.OnGameStateChanged += HandleGameStateChanged;
+    }
+
+    void OnDestroy()
+    {
+        GameManager.OnGameStateChanged -= HandleGameStateChanged;
+    }
+
+    private void HandleGameStateChanged(GameState state)
+    {
+        canLook = (state == GameState.Playing);
     }
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.F5))
+        if (canLook && Input.GetKeyDown(KeyCode.F5))
         {
             isFirstPerson = !isFirstPerson; 
         }
@@ -43,15 +58,18 @@ public class ThirdPersonCamera : MonoBehaviour
 
     void LateUpdate()
     {
-        yaw += Input.GetAxis("Mouse X") * mouseSensitivity;
-        pitch -= Input.GetAxis("Mouse Y") * mouseSensitivity;
+        if (!canLook) return;
+
+        // 2. OVDJE UZIMAMO TRENUTNU SENZITIVNOST DIREKTNO IZ POSTAVKI!
+        float currentSens = SettingsService.MouseSensitivity;
+
+        // Množimo pomjeranje miša sa tom senzitivnosti
+        yaw += Input.GetAxis("Mouse X") * currentSens;
+        pitch -= Input.GetAxis("Mouse Y") * currentSens;
         pitch = Mathf.Clamp(pitch, minY, maxY);
 
         if (isFirstPerson)
         {
-            // === FIRST PERSON LOGIKA ===
-            
-            // 1. Skrivamo glavu! (Smanjujemo kost na nulu)
             if (headBone != null) headBone.localScale = Vector3.zero;
 
             if (playerBody != null)
@@ -65,9 +83,6 @@ public class ThirdPersonCamera : MonoBehaviour
         }
         else
         {
-            // === THIRD PERSON LOGIKA ===
-            
-            // 2. Vraćamo glavu na normalnu veličinu!
             if (headBone != null) headBone.localScale = Vector3.one;
             
             transform.position = target.position + Vector3.up * 2.8f;

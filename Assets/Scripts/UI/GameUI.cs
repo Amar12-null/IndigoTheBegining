@@ -6,7 +6,7 @@ namespace Indigo.UI
     [DisallowMultipleComponent]
     public class GameUI : MonoBehaviour
     {
-        public string MainMenuScene = "MainMenu";
+        
 
         public static GameUI Instance { get; private set; }
         public HUDController  HUD     { get; private set; }
@@ -70,7 +70,7 @@ namespace Indigo.UI
             UIFactory.StretchToParent((RectTransform)pauseLayer.transform);
 
             Pause = gameObject.AddComponent<PauseMenu>();
-            Pause.MainMenuScene = MainMenuScene;
+            
             Pause.Build((RectTransform)pauseLayer.transform, Settings);
 
             settingsLayer.transform.SetAsLastSibling();

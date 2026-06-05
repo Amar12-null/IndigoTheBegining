@@ -9,36 +9,57 @@ public class PlayerMovement : MonoBehaviour
     public Camera playerCamera;
     public Transform cameraPivot;
 
-    // NOVO: Referenca na našu kameru da znamo da li je First Person!
     public ThirdPersonCamera cameraScript;
 
     public float walkSpeed = 2f;
     public float runSpeed = 4f;
     public float jumpPower = 7f;
     public float gravity = 10f;
-
     public float defaultHeight = 3.9f;
-   
 
     private CharacterController characterController;
     private Vector3 moveDirection;
     private float verticalVelocity;
 
-    private bool canMove = true;
+    private bool canMove = false; // Postavljeno na false na početku
 
     void Start()
     {
         characterController = GetComponent<CharacterController>();
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
         
-        
+        // Slušamo promjene stanja iz GameManagera
+        GameManager.OnGameStateChanged += HandleGameStateChanged;
+    }
+
+    void OnDestroy()
+    {
+        // Odjavljujemo se da spriječimo greške
+        GameManager.OnGameStateChanged -= HandleGameStateChanged;
+    }
+
+    private void HandleGameStateChanged(GameState state)
+    {
+        // Igrač se može kretati samo ako je stanje Playing
+        canMove = (state == GameState.Playing);
+
+        // Kursor se zaključava i skriva samo tokom igranja
+        if (state == GameState.Playing)
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+        else
+        {
+            // U meniju, pauzi, ili shopu, kursor mora biti slobodan
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
     }
 
     void Update()
     {
         if (!canMove) return;
-        if (UIEvents.IsPaused) return;
+        if (UIEvents.IsPaused) return; // Zadržali smo i kolegin uslov za UI pauzu
 
         float horizontal = Input.GetAxis("Horizontal");
         float vertical = Input.GetAxis("Vertical");
@@ -57,43 +78,37 @@ public class PlayerMovement : MonoBehaviour
         if (move.magnitude > 1f) move.Normalize();
 
         bool isRunning = Input.GetKey(KeyCode.LeftShift);
-        
         float currentSpeed = isRunning ? runSpeed : walkSpeed;
 
         moveDirection = move * currentSpeed;
     
-        //  ROTACIJA MODELA ZAVISNO OD KAMERE 
         if (cameraScript != null && cameraScript.isFirstPerson)
         {
-            
             playerModel.forward = camForward;
         }
         else
         {
-            //model se vrti prema tome gdje ideš
             if (move.magnitude > 0.1f)
             {
                 playerModel.forward = move;
             }
         }
 
-       // Animacija
         float inputMagnitude = Mathf.Clamp01(new Vector2(horizontal, vertical).magnitude);
-        float animMultiplier = 0f; // 0 znači da animacija stoji (Idle)
+        float animMultiplier = 0f; 
 
-        if (inputMagnitude > 0.1f) // Ako se igrač kreće
+        if (inputMagnitude > 0.1f) 
         {
-           
              if (isRunning) 
-                animMultiplier = 3f; // Trčanje: animacija se ubrzava za 50%
+                animMultiplier = 3f; 
             else 
-                animMultiplier = 1.3f; // Hodanje: normalna brzina animacije
+                animMultiplier = 1.3f; 
         }
 
         AllInOne.SetFloat("Speed", animMultiplier);
         AllInOne.SetFloat("Vertical", vertical);
 
-        characterController.height =  defaultHeight;
+        characterController.height = defaultHeight;
 
         if (characterController.isGrounded)
         {
