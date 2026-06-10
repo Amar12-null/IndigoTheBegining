@@ -10,7 +10,11 @@ namespace Indigo.Customers
         private Text _label;
         private Image _panel;
         private Image _accent;
+        private Image _patienceFill;
+        private RectTransform _patienceFillRt;
+        private float _patienceFillFullWidth;
         private Camera _cam;
+        private bool _orderTaken;
 
         public static OrderBubble Spawn(Customer owner)
         {
@@ -25,7 +29,7 @@ namespace Indigo.Customers
             scaler.referencePixelsPerUnit = 100f;
 
             var rt = (RectTransform)go.transform;
-            rt.sizeDelta = new Vector2(240, 90);
+            rt.sizeDelta = new Vector2(260, 110);
             rt.localScale = Vector3.one * 0.005f;
 
             var bubble = go.AddComponent<OrderBubble>();
@@ -58,9 +62,31 @@ namespace Indigo.Customers
             lRt.anchorMin = new Vector2(0, 0);
             lRt.anchorMax = new Vector2(1, 1);
             lRt.pivot = new Vector2(0.5f, 0.5f);
-            lRt.anchoredPosition = new Vector2(8, -6);
-            lRt.sizeDelta = new Vector2(-28, -22);
+            lRt.anchoredPosition = new Vector2(8, 4);
+            lRt.sizeDelta = new Vector2(-28, -40);
             bubble._label = label;
+
+            // Patience bar background (track)
+            float trackWidth = 220f;
+            var track = UIFactory.Panel("PatienceTrack", panel.transform, UITheme.PanelLight, 4);
+            var tRt = (RectTransform)track.transform;
+            tRt.anchorMin = new Vector2(0, 0);
+            tRt.anchorMax = new Vector2(0, 0);
+            tRt.pivot = new Vector2(0, 0);
+            tRt.anchoredPosition = new Vector2(18, 10);
+            tRt.sizeDelta = new Vector2(trackWidth, 8);
+
+            // Patience bar fill
+            var fill = UIFactory.Panel("PatienceFill", track.transform, UITheme.Accent, 4);
+            var fRt = (RectTransform)fill.transform;
+            fRt.anchorMin = new Vector2(0, 0);
+            fRt.anchorMax = new Vector2(0, 1);
+            fRt.pivot = new Vector2(0, 0.5f);
+            fRt.anchoredPosition = Vector2.zero;
+            fRt.sizeDelta = new Vector2(trackWidth, 0);
+            bubble._patienceFill = fill.GetComponent<Image>();
+            bubble._patienceFillRt = fRt;
+            bubble._patienceFillFullWidth = trackWidth;
 
             bubble._cam = Camera.main;
             return bubble;
@@ -68,17 +94,20 @@ namespace Indigo.Customers
 
         public void MarkOrderTaken()
         {
-            if (_accent != null) _accent.color = new Color(0.40f, 0.85f, 0.55f, 1f);
+            _orderTaken = true;
             if (_label != null) _label.text = _owner.Order.DisplayName() + "  ✓";
         }
 
         void LateUpdate()
         {
             if (_owner == null) { Destroy(gameObject); return; }
+
+            // Position above the seated NPC
             transform.position = _owner.CurrentTable != null
                 ? _owner.CurrentTable.BubblePosition
                 : _owner.transform.position + Vector3.up * 1.8f;
 
+            // Billboard toward main camera (yaw only — keeps bubble upright)
             if (_cam == null) _cam = Camera.main;
             if (_cam != null)
             {
@@ -87,6 +116,20 @@ namespace Indigo.Customers
                 if (dir.sqrMagnitude > 0.0001f)
                     transform.rotation = Quaternion.LookRotation(dir);
             }
+
+            // Patience bar + mood color
+            var sat = _owner.CurrentSatisfaction;
+            var moodColor = sat.Color();
+
+            if (_patienceFillRt != null)
+            {
+                float frac = _owner.PatienceFraction;
+                _patienceFillRt.sizeDelta = new Vector2(_patienceFillFullWidth * frac, 0f);
+                if (_patienceFill != null) _patienceFill.color = moodColor;
+            }
+
+            if (_accent != null)
+                _accent.color = _orderTaken ? new Color(0.40f, 0.85f, 0.55f, 1f) : moodColor;
         }
     }
 }
