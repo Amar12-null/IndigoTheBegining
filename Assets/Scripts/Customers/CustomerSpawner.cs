@@ -29,9 +29,13 @@ namespace Indigo.Customers
 
         void Update()
         {
+            if (Indigo.UI.UIEvents.IsPaused) return;
+
             PruneDead();
             if (Time.time < _nextSpawnAt) return;
-            if (_active.Count >= maxConcurrentCustomers) { ScheduleNext(); return; }
+            if (!IsDayAllowingSpawn()) { ScheduleNext(); return; }
+            int effectiveMax = maxConcurrentCustomers + Indigo.Shop.Upgrades.ExtraConcurrentCustomers();
+            if (_active.Count >= effectiveMax) { ScheduleNext(); return; }
             if (requireFreeTable && TableManager.Instance != null && !TableManager.Instance.HasFreeTable())
             {
                 ScheduleNext();
@@ -39,6 +43,13 @@ namespace Indigo.Customers
             }
             SpawnOne();
             ScheduleNext();
+        }
+
+        bool IsDayAllowingSpawn()
+        {
+            var dm = Indigo.Game.DayManager.Instance;
+            if (dm == null) return true;
+            return dm.IsSpawningAllowed();
         }
 
         void SpawnOne()
