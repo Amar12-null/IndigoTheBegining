@@ -68,7 +68,19 @@ namespace Indigo.Customers
             if (!TryParseOrder(heldName, out var t)) return;
             if (_customer.TryDeliver(t))
             {
+                DestroyHeldCup();
                 UIEvents.ClearHeldItem();
+            }
+        }
+
+        void DestroyHeldCup()
+        {
+            var player = GameObject.FindGameObjectWithTag("Player");
+            if (player == null) return;
+            var bridges = player.GetComponentsInChildren<Indigo.Integration.CupOrderBridge>(true);
+            for (int i = 0; i < bridges.Length; i++)
+            {
+                if (bridges[i] != null) Destroy(bridges[i].gameObject);
             }
         }
 

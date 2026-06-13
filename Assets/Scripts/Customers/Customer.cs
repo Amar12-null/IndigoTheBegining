@@ -22,12 +22,28 @@ namespace Indigo.Customers
         public Animator animator;
         public Transform headAnchor;
 
+        [Tooltip("Drag-dropuj 9 stickman prefabova ovdje. Customer će nasumično odabrati jedan kao vizual. Ako je prazno, koristi se postojeći child model.")]
+        public GameObject[] visualVariants;
+
         [Header("Movement")]
         public float arrivalDistance = 0.4f;
 
         [Header("Behaviour")]
         public float drinkingDuration = 6f;
         public float leaveAfterNoTableDelay = 3f;
+
+        [Header("Patience (seconds)")]
+        [Tooltip("Koliko sekundi NPC čeka da igrač uzme narudžbu prije nego što ode ljut.")]
+        public float maxOrderWait = 30f;
+
+        [Tooltip("Koliko sekundi NPC čeka da igrač donese piće nakon uzimanja narudžbe.")]
+        public float maxDeliveryWait = 45f;
+
+        [Tooltip("Iznad ovog % preostalog strpljenja, NPC je Happy (puna napojnica).")]
+        [Range(0f, 1f)] public float happyThreshold = 0.65f;
+
+        [Tooltip("Iznad ovog % preostalog strpljenja (i ispod happy), NPC je Neutral (normalna napojnica).")]
+        [Range(0f, 1f)] public float neutralThreshold = 0.30f;
 
         [Header("Order")]
         public OrderType[] possibleOrders = { OrderType.Espresso, OrderType.Cappuccino, OrderType.Latte, OrderType.Americano };
@@ -37,6 +53,11 @@ namespace Indigo.Customers
         public Table CurrentTable { get; private set; }
         public bool OrderTaken { get; private set; }
 
+        public float PatienceRemaining { get; private set; }
+        public float PatienceMax { get; private set; }
+        public float PatienceFraction => PatienceMax > 0f ? Mathf.Clamp01(PatienceRemaining / PatienceMax) : 0f;
+        public Satisfaction CurrentSatisfaction => SatisfactionForFraction(PatienceFraction);
+
         private NavMeshAgent _agent;
         private Transform _exitPoint;
         private OrderBubble _bubble;
@@ -45,13 +66,27 @@ namespace Indigo.Customers
         public void Init(Transform exitPoint)
         {
             _exitPoint = exitPoint;
-            Order = possibleOrders[Random.Range(0, possibleOrders.Length)];
+            if (possibleOrders == null || possibleOrders.Length == 0)
+                Order = OrderType.Espresso;
+            else
+                Order = possibleOrders[Random.Range(0, possibleOrders.Length)];
         }
 
         void Awake()
         {
             _agent = GetComponent<NavMeshAgent>();
+            SpawnRandomVisual();
             if (animator == null) animator = GetComponentInChildren<Animator>();
+        }
+
+        void SpawnRandomVisual()
+        {
+            if (visualVariants == null || visualVariants.Length == 0) return;
+            var prefab = visualVariants[Random.Range(0, visualVariants.Length)];
+            if (prefab == null) return;
+            var visual = Instantiate(prefab, transform);
+            visual.transform.localPosition = Vector3.zero;
+            visual.transform.localRotation = Quaternion.identity;
         }
 
         void Start()
@@ -61,10 +96,13 @@ namespace Indigo.Customers
 
         void Update()
         {
+            if (Indigo.UI.UIEvents.IsPaused) return;
+
             UpdateAnimator();
 
             switch (CurrentState)
             {
+                case State.Entering: TickEntering(); break;
                 case State.Seeking: TickSeeking(); break;
                 case State.Sitting: TickSitting(); break;
                 case State.WaitingForOrderTaken: TickWaitingForOrder(); break;
@@ -72,6 +110,12 @@ namespace Indigo.Customers
                 case State.Drinking: TickDrinking(); break;
                 case State.Leaving: TickLeaving(); break;
             }
+        }
+
+        void TickEntering()
+        {
+            _stateTimer -= Time.deltaTime;
+            if (_stateTimer <= 0f) GoLeave(angry: false);
         }
 
         void EnterShop()
@@ -98,7 +142,7 @@ namespace Indigo.Customers
 
         void TickSeeking()
         {
-            if (CurrentTable == null) { GoLeave(); return; }
+            if (CurrentTable == null) { GoLeave(angry: false); return; }
             if (!_agent.pathPending && _agent.remainingDistance <= arrivalDistance)
             {
                 SitDown();
@@ -121,8 +165,46 @@ namespace Indigo.Customers
             if (_stateTimer <= 0f)
             {
                 ShowOrderBubble();
+                StartPatience(maxOrderWait + Indigo.Shop.Upgrades.PatienceBonusSeconds());
                 CurrentState = State.WaitingForOrderTaken;
             }
+        }
+
+        void StartPatience(float duration)
+        {
+            PatienceMax = duration;
+            PatienceRemaining = duration;
+        }
+
+        void TickPatience()
+        {
+            if (PatienceRemaining <= 0f) return;
+            PatienceRemaining -= Time.deltaTime;
+            if (PatienceRemaining < 0f) PatienceRemaining = 0f;
+        }
+
+        void TickWaitingForOrder()
+        {
+            TickPatience();
+            if (PatienceRemaining <= 0f) GoLeave(angry: true);
+        }
+
+        void TickWaitingForDrink()
+        {
+            TickPatience();
+            if (PatienceRemaining <= 0f) GoLeave(angry: true);
+        }
+
+        void TickDrinking()
+        {
+            _stateTimer -= Time.deltaTime;
+            if (_stateTimer <= 0f) GoLeave(angry: false);
+        }
+
+        void TickLeaving()
+        {
+            if (_exitPoint == null) { Finish(); return; }
+            if (!_agent.pathPending && _agent.remainingDistance <= arrivalDistance) Finish();
         }
 
         void ShowOrderBubble()
@@ -141,26 +223,12 @@ namespace Indigo.Customers
             }
         }
 
-        void TickWaitingForOrder() { }
-        void TickWaitingForDrink() { }
-
-        void TickDrinking()
-        {
-            _stateTimer -= Time.deltaTime;
-            if (_stateTimer <= 0f) GoLeave();
-        }
-
-        void TickLeaving()
-        {
-            if (_exitPoint == null) { Finish(); return; }
-            if (!_agent.pathPending && _agent.remainingDistance <= arrivalDistance) Finish();
-        }
-
         public bool TryTakeOrder()
         {
             if (CurrentState != State.WaitingForOrderTaken) return false;
             OrderTaken = true;
             CurrentState = State.WaitingForDrink;
+            StartPatience(maxDeliveryWait + Indigo.Shop.Upgrades.PatienceBonusSeconds());
             if (_bubble != null) _bubble.MarkOrderTaken();
             OrderRegistry.SetState(this, OrderRegistry.TicketState.Taken);
             return true;
@@ -170,18 +238,25 @@ namespace Indigo.Customers
         {
             if (CurrentState != State.WaitingForDrink) return false;
             if (delivered != Order) return false;
+
+            var sat = CurrentSatisfaction;
+            int payout = ComputePayout(Order, sat);
+
             HideOrderBubble();
             CurrentState = State.Drinking;
             _stateTimer = drinkingDuration;
             OrderRegistry.Remove(this);
+
+            if (payout > 0) MoneyManager.AddTip(payout, transform.position + Vector3.up * 2.0f, sat);
             return true;
         }
 
         public bool CanTakeOrder() => CurrentState == State.WaitingForOrderTaken;
         public bool CanDeliver()   => CurrentState == State.WaitingForDrink;
 
-        void GoLeave()
+        void GoLeave(bool angry)
         {
+            if (angry) MoneyManager.NotifyAngryLeave(transform.position + Vector3.up * 2.0f);
             HideOrderBubble();
             if (CurrentTable != null)
             {
@@ -210,6 +285,22 @@ namespace Indigo.Customers
             if (animator == null) return;
             float speed = _agent.velocity.magnitude;
             animator.SetFloat("Speed", speed);
+        }
+
+        Satisfaction SatisfactionForFraction(float frac)
+        {
+            float happyAdj = happyThreshold + Indigo.Shop.Upgrades.HappyThresholdAdjust();
+            if (frac >= happyAdj) return Satisfaction.Happy;
+            if (frac >= neutralThreshold) return Satisfaction.Neutral;
+            if (frac > 0f) return Satisfaction.Annoyed;
+            return Satisfaction.Angry;
+        }
+
+        int ComputePayout(OrderType order, Satisfaction sat)
+        {
+            float baseAmount = order.BasePrice();
+            float multiplier = sat.TipMultiplier() * Indigo.Shop.Upgrades.TipMultiplier();
+            return Mathf.Max(0, Mathf.RoundToInt(baseAmount * multiplier));
         }
 
         void OnDestroy()
