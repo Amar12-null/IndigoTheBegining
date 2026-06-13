@@ -7,7 +7,7 @@ namespace Indigo.UI
     [DisallowMultipleComponent]
     public class MainMenu : MonoBehaviour
     {
-        public string PlayScene = "SampleScene";
+        public string PlayScene = "KaficDesign";
         public string GameTitle = "INDIGO";
         public string Subtitle  = "The Beginning";
 
@@ -128,8 +128,7 @@ namespace Indigo.UI
 
             _settings = gameObject.AddComponent<SettingsPanel>();
             _settings.Build((RectTransform)settingsLayer.transform, onBack: () => { });
-            var pauseMenu = gameObject.AddComponent<PauseMenu>();
-            pauseMenu.Build(root, _settings);
+            
         }
 
         void AddMenuButton(Transform parent, string label, UnityEngine.Events.UnityAction onClick)
@@ -149,15 +148,13 @@ namespace Indigo.UI
         }
 
         void OnPlay()
-        {
-        // Umjesto učitavanja nove scene, javljamo GameManageru da igra počinje!
-        GameManager.Instance.UpdateGameState(GameState.Playing);
-    
-        // Gasimo MainMenu Canvas kako bi igrač vidio igru
-        _cg.alpha = 0; 
-        _cg.interactable = false;
-        _cg.blocksRaycasts = false;
-        }
+    {
+        // Vraćeno na original: Učitavamo scenu koju si upisao u Inspector!
+        if (Application.CanStreamedLevelBeLoaded(PlayScene))
+        SceneManager.LoadScene(PlayScene);
+        else
+        Debug.LogWarning($"MainMenu: scene '{PlayScene}' is not in Build Settings.");
+    }
 
         void OnSettings() { _settings?.Open(); }
 

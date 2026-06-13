@@ -1,17 +1,25 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace Indigo.UI
 {
     public class PauseMenu : MonoBehaviour
     {
+        public string MainMenuScene = "KaficDesign"; // Ovdje upiši tačan naziv svoje Main Menu scene!
+
         GameObject       _root;
         CanvasGroup      _cg;
         RectTransform    _cardRt;
         UIBackgroundBlur _blur;
         SettingsPanel    _settings;
         Coroutine        _animCo;
+        bool             _open, _closing;
+        bool             _wasCursorVisible;
+        CursorLockMode   _wasLockMode;
+
+        public bool IsOpen => _open && !_closing;
 
         public void Build(RectTransform parent, SettingsPanel settings)
         {
@@ -63,26 +71,6 @@ namespace Indigo.UI
 
             _cg.alpha = 0f;
             _root.SetActive(false);
-
-            // Slušamo GameManager da znamo kada treba otvoriti/zatvoriti meni
-            global::GameManager.OnGameStateChanged += HandleGameStateChanged;
-        }
-
-        void OnDestroy()
-        {
-            global::GameManager.OnGameStateChanged -= HandleGameStateChanged;
-        }
-
-        private void HandleGameStateChanged(GameState state)
-        {
-            if (state == GameState.Paused)
-            {
-                Open();
-            }
-            else
-            {
-                Close();
-            }
         }
 
         void AddButton(Transform parent, string label, float yOffset, UnityEngine.Events.UnityAction onClick)
@@ -96,22 +84,37 @@ namespace Indigo.UI
             btn.onClick.AddListener(onClick);
         }
 
-        void Open()
+        public void TogglePause()
         {
+            if (IsOpen) Resume();
+            else        Open();
+        }
+
+        public void Open()
+        {
+            if (_open) return;
+            _open = true;
+            _closing = false;
+            _wasCursorVisible = Cursor.visible;
+            _wasLockMode = Cursor.lockState;
+            Cursor.visible = true;
+            Cursor.lockState = CursorLockMode.None;
+            UIEvents.SetPaused(true);
+
             _cg.alpha = 0f;
             _root.SetActive(true);
             if (_blur != null) _blur.Capture();
-            
+            Time.timeScale = 0f;
+
             if (_animCo != null) StopCoroutine(_animCo);
             _animCo = StartCoroutine(UIAnimator.FadeScaleIn(_cg, _cardRt, 0.18f));
         }
 
-        void Close()
+        public void Resume()
         {
-            if (!_root.activeSelf) return;
-
+            if (!_open || _closing) return;
             if (_settings != null && _settings.IsOpen) _settings.Close();
-            
+            _closing = true;
             if (_animCo != null) StopCoroutine(_animCo);
             _animCo = StartCoroutine(CloseRoutine());
         }
@@ -120,12 +123,12 @@ namespace Indigo.UI
         {
             yield return UIAnimator.FadeScaleOut(_cg, _cardRt, 0.14f);
             _root.SetActive(false);
-        }
-
-        public void Resume()
-        {
-            // Javljamo GameManageru da nastavljamo igru
-            global::GameManager.Instance.UpdateGameState(GameState.Playing);
+            Cursor.visible = _wasCursorVisible;
+            Cursor.lockState = _wasLockMode;
+            Time.timeScale = 1f;
+            UIEvents.SetPaused(false);
+            _open = false;
+            _closing = false;
         }
 
         void OpenSettings()
@@ -135,24 +138,14 @@ namespace Indigo.UI
 
         void GoToMainMenu()
         {
-            // Javljamo GameManageru da idemo u MainMenu
-            global::GameManager.Instance.UpdateGameState(GameState.MainMenu);
-            
-            // Gasimo stari PauseMenu da ne ostane otvoren
-            Close();
-
-            // Prikazujemo nazad MainMenu prozor
-            var mainCanvas = FindObjectOfType<MainMenu>();
-            if (mainCanvas != null)
-            {
-                var canvasGroup = mainCanvas.GetComponentInChildren<CanvasGroup>();
-                if (canvasGroup != null)
-                {
-                    canvasGroup.alpha = 1;
-                    canvasGroup.interactable = true;
-                    canvasGroup.blocksRaycasts = true;
-                }
-            }
+            Time.timeScale = 1f;
+            UIEvents.SetPaused(false);
+            Cursor.visible   = true;
+            Cursor.lockState = CursorLockMode.None;
+            if (Application.CanStreamedLevelBeLoaded(MainMenuScene))
+                SceneManager.LoadScene(MainMenuScene);
+            else
+                Debug.LogWarning($"PauseMenu: scene '{MainMenuScene}' is not in Build Settings.");
         }
 
         void Quit()
@@ -162,6 +155,15 @@ namespace Indigo.UI
 #else
             Application.Quit();
 #endif
+        }
+
+        void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                if (_settings != null && _settings.IsOpen) _settings.Close();
+                else                                       TogglePause();
+            }
         }
     }
 }

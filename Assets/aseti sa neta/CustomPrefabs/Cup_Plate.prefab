@@ -190,6 +190,8 @@ GameObject:
   m_Component:
   - component: {fileID: 6737134043980794673}
   - component: {fileID: 8004931660213083252}
+  - component: {fileID: 5636093555771980115}
+  - component: {fileID: -2396087665328011101}
   m_Layer: 0
   m_Name: Cup_Plate
   m_TagString: Untagged
@@ -233,6 +235,41 @@ MonoBehaviour:
   isPickedUp: 0
   isOnMachine: 0
   isFilled: 0
+--- !u!114 &5636093555771980115
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1221898286459661926}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e1f5d1a5d52ed9e4aa2ef3eaa05a948b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Indigo.Integration.CupOrderBridge
+  drinkType: 0
+  autoLockOnAssigned: 1
+--- !u!135 &-2396087665328011101
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1221898286459661926}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 1
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &3073193068848111884
 GameObject:
   m_ObjectHideFlags: 0

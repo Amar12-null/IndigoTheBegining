@@ -1,5 +1,5 @@
 using UnityEngine;
-using Indigo.UI; // 1. Dodali smo ovo da kamera može čitati kolegine postavke
+using Indigo.UI; 
 
 public class ThirdPersonCamera : MonoBehaviour
 {
@@ -10,7 +10,6 @@ public class ThirdPersonCamera : MonoBehaviour
     [Header("Skrivanje Glave")]
     public Transform headBone;     
 
-    // NAPOMENA: Obrisali smo 'public float mouseSensitivity' jer to sada kontroliše UI!
     public float minY = -30f;
     public float maxY = 60f;
 
@@ -25,8 +24,6 @@ public class ThirdPersonCamera : MonoBehaviour
 
     private float yaw;
     private float pitch;
-    
-    private bool canLook = false; 
 
     void Start()
     {
@@ -34,23 +31,13 @@ public class ThirdPersonCamera : MonoBehaviour
         {
             playerBody = target.root; 
         }
-
-        GameManager.OnGameStateChanged += HandleGameStateChanged;
-    }
-
-    void OnDestroy()
-    {
-        GameManager.OnGameStateChanged -= HandleGameStateChanged;
-    }
-
-    private void HandleGameStateChanged(GameState state)
-    {
-        canLook = (state == GameState.Playing);
     }
 
     void Update()
     {
-        if (canLook && Input.GetKeyDown(KeyCode.F5))
+        if (UIEvents.IsPaused) return; // Ne dozvoli promjenu kamere u meniju
+
+        if (Input.GetKeyDown(KeyCode.F5))
         {
             isFirstPerson = !isFirstPerson; 
         }
@@ -58,12 +45,11 @@ public class ThirdPersonCamera : MonoBehaviour
 
     void LateUpdate()
     {
-        if (!canLook) return;
+        if (UIEvents.IsPaused) return; // Ne dozvoli okretanje kamere u meniju
 
-        // 2. OVDJE UZIMAMO TRENUTNU SENZITIVNOST DIREKTNO IZ POSTAVKI!
+        // Čitamo brzinu miša iz koleginog Settings menija
         float currentSens = SettingsService.MouseSensitivity;
 
-        // Množimo pomjeranje miša sa tom senzitivnosti
         yaw += Input.GetAxis("Mouse X") * currentSens;
         pitch -= Input.GetAxis("Mouse Y") * currentSens;
         pitch = Mathf.Clamp(pitch, minY, maxY);

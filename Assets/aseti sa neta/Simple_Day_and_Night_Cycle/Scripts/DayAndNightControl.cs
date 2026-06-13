@@ -1,4 +1,6 @@
 ﻿using UnityEngine;
+using Indigo.Game; // Dodali smo ovo da može komunicirati sa DayManagerom
+using Indigo.UI;   // Dodali smo ovo za pauzu
 
 [System.Serializable]
 public class DayColors
@@ -11,16 +13,9 @@ public class DayColors
 public class DayAndNightControl : MonoBehaviour 
 {
     [Header("Osnovne Postavke")]
-    public bool StartDay = true; // Započinje igru ujutro
-    public float SecondsInAFullDay = 900f; // 15 minuta u stvarnom vremenu (15 * 60)
-    
     [Range(0,1)]
     public float currentTime = 0; // 0 = Ponoć, 0.5 = Podne, 1 = Ponoć
     
-    [HideInInspector]
-    public float timeMultiplier = 1f; 
-    public int currentDay = 0; 
-
     [Header("Objekti na Sceni")]
     public Light directionalLight; // Tvoje Sunce
     public GameObject StarDome; // Zvjezdano nebo
@@ -29,9 +24,6 @@ public class DayAndNightControl : MonoBehaviour
     public DayColors dawnColors;
     public DayColors dayColors;
     public DayColors nightColors;
-    
-    [Header("UI Debugging")]
-    public bool showUI;
     
     // Privatne varijable
     private float lightIntensity; 
@@ -44,36 +36,43 @@ public class DayAndNightControl : MonoBehaviour
         lightIntensity = directionalLight.intensity; 
         starMat = StarDome.GetComponentInChildren<MeshRenderer>().material;
         
-        // Ako je označeno da počne dan, postavlja vrijeme tačno na 7:00 h
-        if (StartDay) 
-        {
-            currentTime = 0.2917f; // 7 / 24 = 0.291666...
-            starMat.color = new Color(1f, 1f, 1f, 0f); // Gasi zvijezde ujutro
-        }
+        // Fiksiramo vrijeme na jutro na samom početku
+        currentTime = 0.25f; 
+        starMat.color = new Color(1f, 1f, 1f, 0f); 
     }
     
     void Update () 
     {
-        UpdateLight();
-        
-        // Povećava vrijeme na osnovu brzine i sekundi u danu
-        currentTime += (Time.deltaTime / SecondsInAFullDay) * timeMultiplier;
-        
-        // Resetuje vrijeme kada dođe do ponoći i prelazi u novi dan
-        if (currentTime >= 1f) 
+        // 1. Ako je igra pauzirana (meniji, prodavnica), sunce stoji!
+        if (UIEvents.IsPaused) return;
+
+        var dm = DayManager.Instance;
+        if (dm != null)
         {
-            currentTime = 0f;
-            currentDay++; 
+            // 2. Kontrolišemo sunce na osnovu faze smjene
+            if (dm.Phase == DayManager.DayPhase.PreDay)
+            {
+                currentTime = 0.25f; // Zakucano na 6:00 ujutro dok smjena ne počne
+            }
+            else if (dm.Phase == DayManager.DayPhase.Active)
+            {
+                // dm.DayFraction ide od 0 (početak) do 1 (kraj). 
+                // Sunce ide od 0.25 (jutro) do 0.75 (večer).
+                currentTime = Mathf.Lerp(0.25f, 0.75f, dm.DayFraction);
+            }
+            else if (dm.Phase == DayManager.DayPhase.Ended)
+            {
+                currentTime = 0.85f; // Zakucano na noć kad smjena završi
+            }
         }
+
+        UpdateLight();
     }
 
     void UpdateLight()
     {
         // --- SINHRONIZACIJA ROTACIJE ---
-        // Zvjezdano nebo (StarDome) prati tačan procenat trenutnog vremena
         StarDome.transform.localRotation = Quaternion.Euler(0, currentTime * 360f, 0);
-        
-        // Sunce se kreće po nebu (X osa)
         directionalLight.transform.localRotation = Quaternion.Euler((currentTime * 360f) - 90, 170, 0);
 
         // --- INTENZITET SUNCA I ZVIJEZDA ---
@@ -81,13 +80,13 @@ public class DayAndNightControl : MonoBehaviour
 
         if (currentTime <= 0.23f || currentTime >= 0.75f) 
         {
-            intensityMultiplier = 0f; // Sunce je zašlo
-            starMat.color = new Color(1, 1, 1, Mathf.Lerp(starMat.color.a, 1f, Time.deltaTime)); // Zvijezde se pojavljuju
+            intensityMultiplier = 0f; 
+            starMat.color = new Color(1, 1, 1, Mathf.Lerp(starMat.color.a, 1f, Time.deltaTime)); 
         }
         else if (currentTime <= 0.25f) 
         {
             intensityMultiplier = Mathf.Clamp01((currentTime - 0.23f) * (1 / 0.02f));
-            starMat.color = new Color(1, 1, 1, Mathf.Lerp(starMat.color.a, 0f, Time.deltaTime)); // Zvijezde blijede (Jutro)
+            starMat.color = new Color(1, 1, 1, Mathf.Lerp(starMat.color.a, 0f, Time.deltaTime)); 
         }
         else if (currentTime <= 0.73f) 
         {
@@ -108,36 +107,13 @@ public class DayAndNightControl : MonoBehaviour
             LerpAmbientColors(dayColors); 
         }
 
-        // Postavljanje konačnog intenziteta svjetla
         directionalLight.intensity = lightIntensity * intensityMultiplier;
     }
     
-    // Čista "Helper" funkcija za miješanje ambijentalnih boja
     void LerpAmbientColors(DayColors targetColors)
     {
         RenderSettings.ambientSkyColor = Color.Lerp(RenderSettings.ambientSkyColor, targetColors.skyColor, Time.deltaTime);
         RenderSettings.ambientEquatorColor = Color.Lerp(RenderSettings.ambientEquatorColor, targetColors.equatorColor, Time.deltaTime);
         RenderSettings.ambientGroundColor = Color.Lerp(RenderSettings.ambientGroundColor, targetColors.horizonColor, Time.deltaTime);
-    }
-
-    public string TimeOfDay ()
-    {
-        string dayState = "";
-        if (currentTime >= 0f && currentTime < 0.1f) dayState = "Midnight";
-        else if (currentTime >= 0.1f && currentTime < 0.5f) dayState = "Morning";
-        else if (currentTime >= 0.5f && currentTime < 0.6f) dayState = "Mid Noon";
-        else if (currentTime >= 0.6f && currentTime < 0.8f) dayState = "Evening";
-        else if (currentTime >= 0.8f && currentTime <= 1f) dayState = "Night";
-        return dayState;
-    }
-
-    void OnGUI()
-    {
-        if (showUI) {
-            GUILayout.Box ("Day: " + currentDay);
-            GUILayout.Box (TimeOfDay ());
-            GUILayout.Box ("Time slider");
-            currentTime = GUILayout.HorizontalSlider(currentTime, 0f, 1f); 
-        }
     }
 }

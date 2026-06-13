@@ -9,7 +9,7 @@ public class TrashCan : MonoBehaviour
     void Update()
     {
         // Ako si blizu i pritisneš E
-        if (playerNear && Input.GetKeyDown(KeyCode.E))
+        if (playerNear && Input.GetKeyDown(KeyCode.Q))
         {
             // Tražimo da li igrač trenutno ima šoljicu u ruci
             CupPickup heldCup = playerHand.GetComponentInChildren<CupPickup>();

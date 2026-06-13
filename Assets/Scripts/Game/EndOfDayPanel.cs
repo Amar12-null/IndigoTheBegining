@@ -15,6 +15,11 @@ namespace Indigo.Game
         private Text _earnedLabel;
         private Button _nextDayButton;
 
+        [Header("Player Reset")]
+        public GameObject playerObject; // Tvoj Player GameObject
+        public Vector3 playerStartPositions = new Vector3(0f, 1f, 0f); // Početne koordinate (promijenićemo u Inspectoru)
+        public Vector3 playerStartRotation = Vector3.zero; // Početna rotacija igrača
+
         void Start()
         {
             BuildPanel();
@@ -149,12 +154,27 @@ namespace Indigo.Game
             Cursor.lockState = CursorLockMode.None;
         }
 
-        void OnNextDay()
+       void OnNextDay()
         {
             if (_root != null) _root.gameObject.SetActive(false);
             UIEvents.SetPaused(false);
             Cursor.visible = false;
             Cursor.lockState = CursorLockMode.Locked;
+
+            // --- NOVO: RESET POZICIJE IGRAČA ---
+            if (playerObject != null)
+            {
+                // Ako koristiš CharacterController na igraču, moramo ga na blic ugasiti da nam dopusti teleportaciju
+                var controller = playerObject.GetComponent<CharacterController>();
+                if (controller != null) controller.enabled = false;
+
+                playerObject.transform.position = playerStartPositions;
+                playerObject.transform.rotation = Quaternion.Euler(playerStartRotation);
+
+                if (controller != null) controller.enabled = true;
+            }
+            // ------------------------------------
+
             if (DayManager.Instance != null) DayManager.Instance.StartNextDay();
         }
     }

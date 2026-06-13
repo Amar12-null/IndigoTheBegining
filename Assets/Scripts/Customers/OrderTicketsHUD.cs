@@ -12,6 +12,10 @@ namespace Indigo.Customers
         private Text _emptyLabel;
         private readonly List<GameObject> _rows = new List<GameObject>();
 
+        // --- DEFINIŠEMO TVOJU ŽUTU/ZLATNU BOJU ---
+        private readonly Color _themeGold = new Color(0.95f, 0.72f, 0.22f, 1f); 
+        private readonly Color _themeGreen = new Color(0.40f, 0.85f, 0.55f, 1f); // Za TAKEN narudžbe
+
         void Start()
         {
             BuildPanel();
@@ -43,7 +47,8 @@ namespace Indigo.Customers
 
             UIFactory.AddDropShadow(_panel, new Vector2(0, -4), 0.35f, 18, 10f);
 
-            var accent = UIFactory.Panel("Accent", _panel, UITheme.Accent, 2);
+            // ZAMIJENJENO: Plavi vertikalni akcenat sa lijeve strane panela je sada ŽUTI
+            var accent = UIFactory.Panel("Accent", _panel, _themeGold, 2);
             var aRt = (RectTransform)accent.transform;
             aRt.anchorMin = new Vector2(0, 0);
             aRt.anchorMax = new Vector2(0, 1);
@@ -116,7 +121,11 @@ namespace Indigo.Customers
                 le.preferredHeight = 36;
                 le.minHeight = 36;
 
-                var dot = UIFactory.Panel("Dot", row.transform, t.State == OrderRegistry.TicketState.Taken ? new Color(0.40f, 0.85f, 0.55f) : UITheme.Accent, 6);
+                bool isTaken = t.State == OrderRegistry.TicketState.Taken;
+
+                // ZAMIJENJENO: Kružić pored narudžbe je ZELEN ako je preuzeta, ili ŽUT ako je nova!
+                Color dotColor = isTaken ? _themeGreen : _themeGold;
+                var dot = UIFactory.Panel("Dot", row.transform, dotColor, 6);
                 var dRt = (RectTransform)dot.transform;
                 dRt.anchorMin = new Vector2(0, 0.5f);
                 dRt.anchorMax = new Vector2(0, 0.5f);
@@ -124,14 +133,23 @@ namespace Indigo.Customers
                 dRt.sizeDelta = new Vector2(10, 10);
                 dRt.anchoredPosition = new Vector2(10, 0);
 
-                var label = UIFactory.Label("Name", row.transform, t.Order.DisplayName(), UITheme.FontBody, UITheme.TextPrimary, TextAnchor.MiddleLeft);
+                // --- CAKA: SAKRIVANJE NAZIVA PIĆA DOK SE NE PREUZME NARUDŽBA ---
+                // Ako je narudžba na čekanju (Pending/NEW), igrač vidi samo "???"
+                // Tek kada priđe gostu i pritisne E, piće prelazi u Taken i otkriva se pravi naziv!
+                string displayedName = isTaken ? t.Order.DisplayName() : "???";
+
+                var label = UIFactory.Label("Name", row.transform, displayedName, UITheme.FontBody, UITheme.TextPrimary, TextAnchor.MiddleLeft);
                 var lRt = label.rectTransform;
                 lRt.anchorMin = Vector2.zero;
                 lRt.anchorMax = Vector2.one;
                 lRt.offsetMin = new Vector2(28, 0);
                 lRt.offsetMax = new Vector2(-60, 0);
 
-                var status = UIFactory.Label("Status", row.transform, t.State == OrderRegistry.TicketState.Taken ? "TAKEN" : "NEW", UITheme.FontSmall, t.State == OrderRegistry.TicketState.Taken ? new Color(0.40f, 0.85f, 0.55f) : UITheme.Accent, TextAnchor.MiddleRight);
+                // ZAMIJENJENO: Oznaka statusa ("NEW" ili "TAKEN") i njena boja su prebačene iz plave u žutu!
+                string statusText = isTaken ? "TAKEN" : "NEW";
+                Color statusColor = isTaken ? _themeGreen : _themeGold;
+
+                var status = UIFactory.Label("Status", row.transform, statusText, UITheme.FontSmall, statusColor, TextAnchor.MiddleRight);
                 var sRt = status.rectTransform;
                 sRt.anchorMin = new Vector2(1, 0);
                 sRt.anchorMax = new Vector2(1, 1);

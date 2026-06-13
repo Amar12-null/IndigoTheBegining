@@ -40,16 +40,17 @@ namespace Indigo.Integration
             if (_cup == null) return;
 
             bool nowPicked = _cup.isPickedUp;
+            
             if (nowPicked && !_lastIsPickedUp)
             {
                 string state = _cup.isFilled ? "Ready" : "Empty";
                 UIEvents.SetHeldItem(drinkType.DisplayName(), state);
                 _wasHeldByUs = true;
             }
-            else if (!nowPicked && _lastIsPickedUp && _wasHeldByUs)
+            // Ako je šolja spuštena na aparat, odmah očisti HUD!
+            else if (!nowPicked && _lastIsPickedUp)
             {
-                if (UIEvents.CurrentHeldName == drinkType.DisplayName())
-                    UIEvents.ClearHeldItem();
+                UIEvents.ClearHeldItem();
                 _wasHeldByUs = false;
             }
             else if (nowPicked && _wasHeldByUs && _cup.isFilled
@@ -60,7 +61,6 @@ namespace Indigo.Integration
 
             _lastIsPickedUp = nowPicked;
         }
-
         void OnDestroy()
         {
             if (_wasHeldByUs && UIEvents.CurrentHeldName == drinkType.DisplayName())

@@ -149,10 +149,11 @@ namespace Indigo.Customers
             }
         }
 
-        void SitDown()
+       void SitDown()
         {
             _agent.ResetPath();
-            _agent.isStopped = true;
+            _agent.enabled = false; 
+
             transform.position = CurrentTable.SeatPosition;
             transform.rotation = CurrentTable.SeatRotation;
             CurrentState = State.Sitting;
@@ -191,9 +192,12 @@ namespace Indigo.Customers
 
         void TickWaitingForDrink()
         {
+            TickPayout(); // Ako imaš neku logiku za to
             TickPatience();
             if (PatienceRemaining <= 0f) GoLeave(angry: true);
         }
+
+        void TickPayout() {}
 
         void TickDrinking()
         {
@@ -207,11 +211,24 @@ namespace Indigo.Customers
             if (!_agent.pathPending && _agent.remainingDistance <= arrivalDistance) Finish();
         }
 
+        // --- POPRAVLJENO: SAKRIVANJE NARUDŽBE DOK JE IGRAČ NE UZME ---
         void ShowOrderBubble()
         {
             if (_bubble != null) return;
             _bubble = OrderBubble.Spawn(this);
+            
+            // Trik: U registar ulaznica upisujemo privremeno gosta, ali skripta 'OrderTicketsHUD'
+            // će ga prepoznati kao "???" jer mu je stanje TicketState.Pending!
             OrderRegistry.Add(this, Order);
+            
+            // Ovdje ako tvoj OrderBubble ima opciju da se ugasi tekst/ikona, 
+            // možeš je sakriti. Na primjer, ako prikazuje tekst, postavićemo ga na upitnik:
+            var bubbleText = _bubble.GetComponentInChildren<UnityEngine.UI.Text>();
+            if (bubbleText != null) 
+            {
+                bubbleText.text = "?";
+                bubbleText.color = new Color(0.95f, 0.72f, 0.22f, 1f); // Žuta boja upitnika!
+            }
         }
 
         void HideOrderBubble()
@@ -229,7 +246,21 @@ namespace Indigo.Customers
             OrderTaken = true;
             CurrentState = State.WaitingForDrink;
             StartPatience(maxDeliveryWait + Indigo.Shop.Upgrades.PatienceBonusSeconds());
-            if (_bubble != null) _bubble.MarkOrderTaken();
+            
+            // --- NOVO: REZERVACIJA I OTKRIVANJE PRAVE KAFE ---
+            if (_bubble != null) 
+            {
+                _bubble.MarkOrderTaken();
+                
+                // Kada uzmeš narudžbu, ako bubble ispisuje tekst, otkrivamo pravo ime pića
+                var bubbleText = _bubble.GetComponentInChildren<UnityEngine.UI.Text>();
+                if (bubbleText != null) 
+                {
+                    bubbleText.text = Order.DisplayName();
+                    bubbleText.color = Color.white; // Vraćamo u bijelo kad je aktivno
+                }
+            }
+            
             OrderRegistry.SetState(this, OrderRegistry.TicketState.Taken);
             return true;
         }
@@ -237,7 +268,12 @@ namespace Indigo.Customers
         public bool TryDeliver(OrderType delivered)
         {
             if (CurrentState != State.WaitingForDrink) return false;
-            if (delivered != Order) return false;
+            
+            if (delivered != Order) 
+            {
+                Debug.LogWarning($"Gost odbija piće! Naručio je: {Order}, a ti mu daješ: {delivered}");
+                return false;
+            }
 
             var sat = CurrentSatisfaction;
             int payout = ComputePayout(Order, sat);
@@ -248,13 +284,14 @@ namespace Indigo.Customers
             OrderRegistry.Remove(this);
 
             if (payout > 0) MoneyManager.AddTip(payout, transform.position + Vector3.up * 2.0f, sat);
+
             return true;
         }
 
         public bool CanTakeOrder() => CurrentState == State.WaitingForOrderTaken;
         public bool CanDeliver()   => CurrentState == State.WaitingForDrink;
 
-        void GoLeave(bool angry)
+       void GoLeave(bool angry)
         {
             if (angry) MoneyManager.NotifyAngryLeave(transform.position + Vector3.up * 2.0f);
             HideOrderBubble();
@@ -264,6 +301,11 @@ namespace Indigo.Customers
                 CurrentTable = null;
             }
             CurrentState = State.Leaving;
+            
+            _agent.enabled = true; 
+            Vector3 pozicijaIzaStolice = transform.position - (transform.forward * 0.6f);
+            _agent.Warp(pozicijaIzaStolice); 
+            
             _agent.isStopped = false;
             if (_exitPoint != null) _agent.SetDestination(_exitPoint.position);
         }
@@ -285,6 +327,12 @@ namespace Indigo.Customers
             if (animator == null) return;
             float speed = _agent.velocity.magnitude;
             animator.SetFloat("Speed", speed);
+            
+            bool sitting = (CurrentState == State.Sitting || 
+                            CurrentState == State.WaitingForOrderTaken || 
+                            CurrentState == State.WaitingForDrink || 
+                            CurrentState == State.Drinking);
+            animator.SetBool("IsSitting", sitting);
         }
 
         Satisfaction SatisfactionForFraction(float frac)

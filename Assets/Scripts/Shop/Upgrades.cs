@@ -9,6 +9,11 @@ namespace Indigo.Shop
         ComfyChairs,
         ReputationSign,
         MarketingPosters,
+        // Svi unutrašnji objekti na jednom mjestu
+        Interior2,
+        Interior3,
+        Decorations,
+        Garden
     }
 
     public class UpgradeDef
@@ -18,16 +23,23 @@ namespace Indigo.Shop
         public string Description;
         public int Price;
         public int LevelRequired;
+        public string Category; // NOVO: Za ljepše sortiranje u UI panelu
     }
 
     public static class Upgrades
     {
         public static readonly UpgradeDef[] Catalog =
         {
-            new UpgradeDef { Id = UpgradeId.TipJar,           Name = "Tip Jar",            Description = "+25% napojnice na svaku narudžbu", Price = 25,  LevelRequired = 1 },
-            new UpgradeDef { Id = UpgradeId.ComfyChairs,      Name = "Comfy Chairs",       Description = "+10s strpljenja kod novih gostiju", Price = 50,  LevelRequired = 2 },
-            new UpgradeDef { Id = UpgradeId.ReputationSign,   Name = "Reputation Sign",    Description = "Gosti su sretni duže (lakše dobiti Happy tier)", Price = 75,  LevelRequired = 3 },
-            new UpgradeDef { Id = UpgradeId.MarketingPosters, Name = "Marketing Posters",  Description = "+1 maksimalan broj istovremenih gostiju", Price = 120, LevelRequired = 5 },
+            new UpgradeDef { Id = UpgradeId.TipJar,           Name = "Tip Jar",            Description = "+25% napojnice na svaku narudžbu", Price = 25,  LevelRequired = 1, Category = "LOGISTICS" },
+            new UpgradeDef { Id = UpgradeId.ComfyChairs,      Name = "Comfy Chairs",       Description = "+10s strpljenja kod novih gostiju", Price = 50,  LevelRequired = 2, Category = "LOGISTICS" },
+            new UpgradeDef { Id = UpgradeId.ReputationSign,   Name = "Reputation Sign",    Description = "Gosti su sretni duže (lakše dobiti Happy tier)", Price = 75,  LevelRequired = 3, Category = "LOGISTICS" },
+            new UpgradeDef { Id = UpgradeId.MarketingPosters, Name = "Marketing Posters",  Description = "+1 maksimalan broj istovremenih gostiju", Price = 120, LevelRequired = 5, Category = "LOGISTICS" },
+            
+            // --- NOVO: FIZIČKE NADOGRADNJE U KATALOGU ---
+            new UpgradeDef { Id = UpgradeId.Interior2,        Name = "Expand: Interior 2", Description = "Otključaj novu salu i dodatne stolove za goste", Price = 200, LevelRequired = 2, Category = "EXPANSION" },
+            new UpgradeDef { Id = UpgradeId.Interior3,        Name = "Expand: Interior 3", Description = "Otključaj novu salu i dodatne stolove za goste", Price = 200, LevelRequired = 2, Category = "EXPANSION" },
+            new UpgradeDef { Id = UpgradeId.Decorations,      Name = "Cafe Decorations",   Description = "Uljepšaj kafić biljkama i modernim slikama", Price = 100, LevelRequired = 3, Category = "VISUAL" },
+            new UpgradeDef { Id = UpgradeId.Garden,           Name = "Open: Cozy Garden",  Description = "Otvori prelijepu baštu ispred kafića", Price = 350, LevelRequired = 4, Category = "EXPANSION" }
         };
 
         private static readonly HashSet<UpgradeId> _owned = new HashSet<UpgradeId>();
@@ -60,29 +72,11 @@ namespace Indigo.Shop
             return true;
         }
 
-        public static float TipMultiplier()
-        {
-            return IsOwned(UpgradeId.TipJar) ? 1.25f : 1f;
-        }
+        public static float TipMultiplier() => IsOwned(UpgradeId.TipJar) ? 1.25f : 1f;
+        public static float PatienceBonusSeconds() => IsOwned(UpgradeId.ComfyChairs) ? 10f : 0f;
+        public static float HappyThresholdAdjust() => IsOwned(UpgradeId.ReputationSign) ? -0.15f : 0f;
+        public static int ExtraConcurrentCustomers() => IsOwned(UpgradeId.MarketingPosters) ? 1 : 0;
 
-        public static float PatienceBonusSeconds()
-        {
-            return IsOwned(UpgradeId.ComfyChairs) ? 10f : 0f;
-        }
-
-        public static float HappyThresholdAdjust()
-        {
-            return IsOwned(UpgradeId.ReputationSign) ? -0.15f : 0f;
-        }
-
-        public static int ExtraConcurrentCustomers()
-        {
-            return IsOwned(UpgradeId.MarketingPosters) ? 1 : 0;
-        }
-
-        public static void ResetAll()
-        {
-            _owned.Clear();
-        }
+        public static void ResetAll() => _owned.Clear();
     }
 }

@@ -8,7 +8,6 @@ public class PlayerMovement : MonoBehaviour
     public Animator AllInOne;
     public Camera playerCamera;
     public Transform cameraPivot;
-
     public ThirdPersonCamera cameraScript;
 
     public float walkSpeed = 2f;
@@ -21,45 +20,19 @@ public class PlayerMovement : MonoBehaviour
     private Vector3 moveDirection;
     private float verticalVelocity;
 
-    private bool canMove = false; // Postavljeno na false na početku
-
     void Start()
     {
         characterController = GetComponent<CharacterController>();
         
-        // Slušamo promjene stanja iz GameManagera
-        GameManager.OnGameStateChanged += HandleGameStateChanged;
-    }
-
-    void OnDestroy()
-    {
-        // Odjavljujemo se da spriječimo greške
-        GameManager.OnGameStateChanged -= HandleGameStateChanged;
-    }
-
-    private void HandleGameStateChanged(GameState state)
-    {
-        // Igrač se može kretati samo ako je stanje Playing
-        canMove = (state == GameState.Playing);
-
-        // Kursor se zaključava i skriva samo tokom igranja
-        if (state == GameState.Playing)
-        {
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
-        }
-        else
-        {
-            // U meniju, pauzi, ili shopu, kursor mora biti slobodan
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
-        }
+        // Na početku igre odmah zaključavamo miš
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
 
     void Update()
     {
-        if (!canMove) return;
-        if (UIEvents.IsPaused) return; // Zadržali smo i kolegin uslov za UI pauzu
+        // Kolegin sistem zaustavlja kretanje kada je igra pauzirana
+        if (UIEvents.IsPaused) return; 
 
         float horizontal = Input.GetAxis("Horizontal");
         float vertical = Input.GetAxis("Vertical");

@@ -1,49 +1,56 @@
 using UnityEngine;
+using Indigo.Machines; // Pristup progress traci
+using Indigo.Integration; // Pristup DrinkSelectorStation
 
 public class CoffeeMachineSlot : MonoBehaviour
 {
     [Header("Portafilter Postavke")]
-    public PortafilterPickup portafilter; // Trenutni portafilter na aparatu (skripta ga sama popunjava)
-    public Transform portafilterSlot;     // NOVO: Mjesto (prazan objekat) gdje se portafilter kači na aparat
+    public PortafilterPickup portafilter; 
+    public Transform portafilterSlot;     
     
     [Header("Multi-Cup Postavke")]
     public Transform[] cupSlots;         
     
+    [Header("Player & UI Postavke")]
     public Transform playerHand;         
     public float brewTime = 3f;          
+    public Vector3 uiLocalOffset = new Vector3(0f, 1.2f, 0f); // Pozicija trake iznad aparata
     
     private float currentBrewTimer = 0f;
     private bool playerNear = false;
+    private bool _isBrewing = false; // NOVO: Prati da li aparat sam kuva
+    private MachineProgressWorldUI _progressUI; 
+
+    void Start()
+    {
+        _progressUI = MachineProgressWorldUI.Create(transform, uiLocalOffset);
+    }
 
     void Update()
     {
-        if (!playerNear) return;
+        // Ako igrač ode predaleko, aparat i dalje kuva sam dok ne završi!
 
-        // 1. POSTAVLJANJE I UZIMANJE STVARI (Tipka E)
-        if (Input.GetKeyDown(KeyCode.E))
+        // 1. POSTAVLJANJE I UZIMANJE STVARI (Tipka E) - Blokirano ako aparat kuva!
+        if (Input.GetKeyDown(KeyCode.E) && playerNear && !_isBrewing)
         {
             CupPickup heldCup = playerHand.GetComponentInChildren<CupPickup>();
             PortafilterPickup heldPortafilter = playerHand.GetComponentInChildren<PortafilterPickup>();
-                ArmOverride arm = playerHand.GetComponentInParent<ArmOverride>();
+            ArmOverride arm = playerHand.GetComponentInParent<ArmOverride>();
 
             // Slučaj A: Držiš PORTAFILTER -> Stavi ga na aparat
-            
             if (heldPortafilter != null && portafilter == null)
             {
                 portafilter = heldPortafilter; 
-                
                 portafilter.transform.SetParent(portafilterSlot);
                 portafilter.transform.localPosition = Vector3.zero;
                 portafilter.transform.localRotation = Quaternion.identity;
                 portafilter.isOnMachine = true;
-                
-                // NOVO: Moramo reći igri da ga više NE DRŽIŠ!
                 portafilter.isPickedUp = false; 
                 
                 playerHand.GetComponentInParent<ArmOverride>().isHoldingRight = false; 
                 Debug.Log("Portafilter postavljen na aparat!");
             }
-            // Slučaj B: Držiš ŠOLJICU -> Stavi je na aparat
+           // Slučaj B: Držiš ŠOLJICU -> Stavi je na aparat
             else if (heldCup != null)
             {
                 Transform emptySlot = GetEmptyCupSlot();
@@ -53,12 +60,11 @@ public class CoffeeMachineSlot : MonoBehaviour
                     heldCup.transform.localPosition = Vector3.zero;
                     heldCup.transform.localRotation = Quaternion.identity;
                     
+                    // Javljamo šoljici da je više ne držimo
+                    heldCup.isPickedUp = false; 
+                    
                     playerHand.GetComponentInParent<ArmOverride>().isHoldingRight = false;
-                    Debug.Log("Šoljica stavljena na aparat!");
-                }
-                else
-                {
-                    Debug.Log("Nema mjesta za još šoljica!");
+                    Debug.Log("Šoljica stavljena na aparat i isPickedUp je isključen!");
                 }
             }
             // Slučaj C: RUKE SU PRAZNE -> Uzmi nešto sa aparata
@@ -66,58 +72,69 @@ public class CoffeeMachineSlot : MonoBehaviour
             {
                 CupPickup readyCup = GetReadyCup();
                 
-                // Prioritet 1: Uzmi kafu ako je ima
+                // Uzmi kafu ako je ima
                 if (readyCup != null)
                 {
                     readyCup.transform.SetParent(playerHand);
                     readyCup.transform.localPosition = Vector3.zero;
                     readyCup.transform.localRotation = Quaternion.identity;
 
+                    // Javljamo šoljici da smo je upravo podigli
+                    readyCup.isPickedUp = true;
+
                     if (arm != null) arm.isHoldingRight = true;
-                    Debug.Log("Uzeta kafa sa aparata!");
+                    Debug.Log("Uzeta kafa sa aparata i isPickedUp je uključen!");
+                    
+                    if (_progressUI != null) _progressUI.UpdateProgress(0f);
                 }
-                // Prioritet 2: Ako nema kafe za uzeti, skini portafilter
-               // Prioritet 2: Ako nema kafe za uzeti, skini portafilter
+                // Ako nema kafe, skini portafilter
                 else if (portafilter != null)
                 {
                     portafilter.transform.SetParent(playerHand);
                     portafilter.transform.localPosition = Vector3.zero;
                     portafilter.transform.localRotation = Quaternion.identity;
                     portafilter.isOnMachine = false;
-                    
-                    // NOVO: Igra mora znati da si ga OPET UZEO!
                     portafilter.isPickedUp = true; 
                     
                     if (arm != null) arm.isHoldingRight = true;
                     
                     portafilter = null; 
                     Debug.Log("Portafilter skinut sa aparata!");
+                    if (_progressUI != null) _progressUI.UpdateProgress(0f);
                 }
             }
         }
 
-        // 2. LOGIKA KUHANJA KAFE (Držanje lijevog klika)
-        if (portafilter != null && portafilter.currentState == PortafilterPickup.PortafilterState.GroundCoffee && HasUnfilledCup())
+        // 2. LOGIKA OKIDANJA KUVANJA (Samo jedan klik mišem, ne držanje!)
+        if (playerNear && portafilter != null && portafilter.currentState == PortafilterPickup.PortafilterState.GroundCoffee && HasUnfilledCup())
         {
-            if (Input.GetMouseButton(0)) 
+            if (Input.GetMouseButtonDown(0) && !_isBrewing) 
             {
-                currentBrewTimer += Time.deltaTime;
-                Debug.Log("Kuham kafu... " + Mathf.RoundToInt((currentBrewTimer / brewTime) * 100) + "%");
-
-                if (currentBrewTimer >= brewTime)
-                {
-                    FillAllCups();
-                    
-                    portafilter.currentState = PortafilterPickup.PortafilterState.UsedCoffee;
-                    if (portafilter.coffeeVisual != null) portafilter.coffeeVisual.SetActive(false);
-
-                    currentBrewTimer = 0f;
-                    Debug.Log("Kafa uspješno skuhana!");
-                }
+                _isBrewing = true;
+                currentBrewTimer = 0f;
+                Debug.Log("Kuvanje pokrenuto na jedan klik!");
             }
-            else if (Input.GetMouseButtonUp(0))
+        }
+
+        // 3. AUTOMATSKO KUVANJE (Aparat radi sam u pozadini)
+        if (_isBrewing)
+        {
+            currentBrewTimer += Time.deltaTime;
+            
+            float fraction = currentBrewTimer / brewTime;
+            bool isDone = currentBrewTimer >= brewTime;
+            
+            if (_progressUI != null) _progressUI.UpdateProgress(fraction, isDone);
+
+            if (isDone)
             {
-                currentBrewTimer = 0f; 
+                FillAllCups();
+                
+                portafilter.currentState = PortafilterPickup.PortafilterState.UsedCoffee;
+                if (portafilter.coffeeVisual != null) portafilter.coffeeVisual.SetActive(false);
+
+                _isBrewing = false; // Aparat gasi kuvanje, traka ostaje zelena dok ne uzmeš kafu
+                Debug.Log("Aparat završio! Kafa skuvana!");
             }
         }
     }
@@ -159,7 +176,7 @@ public class CoffeeMachineSlot : MonoBehaviour
         return false;
     }
 
-    private void FillAllCups()
+   private void FillAllCups()
     {
         foreach (Transform slot in cupSlots)
         {
@@ -170,6 +187,20 @@ public class CoffeeMachineSlot : MonoBehaviour
                 {
                     cup.isFilled = true;
                     if (cup.coffeeLiquid != null) cup.coffeeLiquid.SetActive(true); 
+
+                    // --- NOVO: AUTOMATSKO PROSLJEĐIVANJE TIPA KAFE ---
+                    // Ako portafilter ima definisan tip kafe, prepisujemo ga direktno u šolju
+                    var bridge = cup.GetComponent<CupOrderBridge>();
+                    if (bridge != null && portafilter != null)
+                    {
+                        // Ako tvoj portafilter ima npr. varijablu 'targetOrder' ili slično, stavi je ovdje.
+                        // Za sada, ako nemaš, koristićemo selektor ako postoji, ili automatski prepoznati.
+                        var selector = GameObject.FindAnyObjectByType<Indigo.Integration.DrinkSelectorStation>();
+                        if (selector != null)
+                        {
+                            bridge.AssignDrinkType(selector.Selected);
+                        }
+                    }
                 }
             }
         }

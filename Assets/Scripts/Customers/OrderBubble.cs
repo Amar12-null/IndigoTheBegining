@@ -16,6 +16,9 @@ namespace Indigo.Customers
         private Camera _cam;
         private bool _orderTaken;
 
+        // --- DEFINIŠEMO ŽUTU/ZLATNU BOJU ---
+        private static readonly Color ThemeGold = new Color(0.95f, 0.72f, 0.22f, 1f);
+
         public static OrderBubble Spawn(Customer owner)
         {
             var go = new GameObject("OrderBubble_" + owner.name,
@@ -39,7 +42,8 @@ namespace Indigo.Customers
             UIFactory.StretchToParent((RectTransform)panel.transform);
             bubble._panel = panel.GetComponent<Image>();
 
-            var accent = UIFactory.Panel("Accent", panel.transform, UITheme.Accent, 2);
+            // ZAMIJENJENO: Plava linija (Accent) sa lijeve strane prozorčića je sada ŽUTA
+            var accent = UIFactory.Panel("Accent", panel.transform, ThemeGold, 2);
             var aRt = (RectTransform)accent.transform;
             aRt.anchorMin = new Vector2(0, 0);
             aRt.anchorMax = new Vector2(0, 1);
@@ -56,7 +60,9 @@ namespace Indigo.Customers
             cRt.anchoredPosition = new Vector2(18, -10);
             cRt.sizeDelta = new Vector2(-28, 18);
 
-            var label = UIFactory.Label("Order", panel.transform, owner.Order.DisplayName(), UITheme.FontHeader, UITheme.TextPrimary, TextAnchor.MiddleLeft);
+            // --- ZAMIJENJENO: SAKRIVANJE NAZIVA PIĆA NA SAMOM POČETKU ---
+            // Umjesto owner.Order.DisplayName() odmah ispisujemo "???" u žutoj boji!
+            var label = UIFactory.Label("Order", panel.transform, "???", UITheme.FontHeader, ThemeGold, TextAnchor.MiddleLeft);
             label.fontStyle = FontStyle.Bold;
             var lRt = label.rectTransform;
             lRt.anchorMin = new Vector2(0, 0);
@@ -76,8 +82,8 @@ namespace Indigo.Customers
             tRt.anchoredPosition = new Vector2(18, 10);
             tRt.sizeDelta = new Vector2(trackWidth, 8);
 
-            // Patience bar fill
-            var fill = UIFactory.Panel("PatienceFill", track.transform, UITheme.Accent, 4);
+            // Patience bar fill - Inicijalno ga prefarbamo u žuto
+            var fill = UIFactory.Panel("PatienceFill", track.transform, ThemeGold, 4);
             var fRt = (RectTransform)fill.transform;
             fRt.anchorMin = new Vector2(0, 0);
             fRt.anchorMax = new Vector2(0, 1);
@@ -92,10 +98,16 @@ namespace Indigo.Customers
             return bubble;
         }
 
+        // --- ISPRALJENO: OTKRIVANJE PIĆA NAKON INTERAKCIJE ---
         public void MarkOrderTaken()
         {
             _orderTaken = true;
-            if (_label != null) _label.text = _owner.Order.DisplayName() + "  ✓";
+            if (_label != null)
+            {
+                // Kada igrač uzme narudžbu, vraćamo bijelu boju teksta i upisujemo naziv pića!
+                _label.text = _owner.Order.DisplayName() + "  ✓";
+                _label.color = UITheme.TextPrimary; 
+            }
         }
 
         void LateUpdate()
@@ -107,7 +119,7 @@ namespace Indigo.Customers
                 ? _owner.CurrentTable.BubblePosition
                 : _owner.transform.position + Vector3.up * 1.8f;
 
-            // Billboard toward main camera (yaw only — keeps bubble upright)
+            // Billboard toward main camera
             if (_cam == null) _cam = Camera.main;
             if (_cam != null)
             {
@@ -129,7 +141,7 @@ namespace Indigo.Customers
             }
 
             if (_accent != null)
-                _accent.color = _orderTaken ? new Color(0.40f, 0.85f, 0.55f, 1f) : moodColor;
+                _accent.color = _orderTaken ? new Color(0.40f, 0.85f, 0.55f, 1f) : ThemeGold;
         }
     }
 }

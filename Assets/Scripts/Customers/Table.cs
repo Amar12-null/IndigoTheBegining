@@ -43,11 +43,13 @@ namespace Indigo.Customers
             Occupant = null;
         }
 
-        void OnDrawGizmos()
+       void OnDrawGizmos()
         {
             Gizmos.color = IsOccupied ? new Color(1f, 0.4f, 0.2f, 0.9f) : new Color(0.3f, 0.9f, 0.4f, 0.9f);
             Gizmos.DrawSphere(SeatPosition, 0.15f);
-            Gizmos.color = new Color(0.5f, 0.8f, 1f, 0.6f);
+            
+            // ZAMIJENJENO: Plave linije za bubble u editoru su sada prelijepo zlatno-žute!
+            Gizmos.color = new Color(0.95f, 0.72f, 0.22f, 0.7f); 
             Gizmos.DrawWireSphere(BubblePosition, 0.12f);
             Gizmos.DrawLine(SeatPosition, BubblePosition);
         }

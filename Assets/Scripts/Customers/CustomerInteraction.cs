@@ -1,15 +1,16 @@
 using UnityEngine;
 using Indigo.UI;
+using Indigo.Integration; // NOVO: Dodajemo namespace da skripta vidi CupOrderBridge!
 
 namespace Indigo.Customers
 {
     [RequireComponent(typeof(Customer))]
     public class CustomerInteraction : MonoBehaviour
     {
-        [Tooltip("Ako je true, igrač mora držati tačan item (npr. 'Espresso') da bi dostavio. Ako je false, dostava ide samim E pritiskom radi testiranja.")]
+        [Tooltip("Ako je true, igrač mora držati tačan item da bi dostavio.")]
         public bool requireHeldDrink = true;
 
-        [Tooltip("KeyCode za interakciju (preuzimanje narudžbe / dostava).")]
+        [Tooltip("KeyCode za interakciju.")]
         public KeyCode interactKey = KeyCode.E;
 
         private Customer _customer;
@@ -66,6 +67,8 @@ namespace Indigo.Customers
         void TryDeliverHeld(string heldName)
         {
             if (!TryParseOrder(heldName, out var t)) return;
+            
+            // Prosljeđujemo stvarni tip kafe gostu
             if (_customer.TryDeliver(t))
             {
                 DestroyHeldCup();
@@ -73,14 +76,25 @@ namespace Indigo.Customers
             }
         }
 
+        // --- POPRAVLJENO SIGURNO UNIŠTAVANJE ŠOLJICE IZ RUKE ---
         void DestroyHeldCup()
         {
-            var player = GameObject.FindGameObjectWithTag("Player");
-            if (player == null) return;
-            var bridges = player.GetComponentsInChildren<Indigo.Integration.CupOrderBridge>(true);
-            for (int i = 0; i < bridges.Length; i++)
+            // Pronalazimo aparat za kafu na sceni kako bismo preko njega uzeli tačnu referencu na playerHand
+            var machine = GameObject.FindAnyObjectByType<CoffeeMachineSlot>();
+            if (machine != null && machine.playerHand != null)
             {
-                if (bridges[i] != null) Destroy(bridges[i].gameObject);
+                // Tražimo šoljicu koja se nalazi direktno unutar igračevih ruku
+                CupPickup heldCup = machine.playerHand.GetComponentInChildren<CupPickup>();
+                if (heldCup != null)
+                {
+                    Destroy(heldCup.gameObject); // Uništavamo šoljicu iz ruke!
+                    
+                    // Oslobađamo desnu ruku u ArmOverride sistemu animacija
+                    ArmOverride arm = machine.playerHand.GetComponentInParent<ArmOverride>();
+                    if (arm != null) arm.isHoldingRight = false;
+                    
+                    Debug.Log("CustomerInteraction: Šoljica uništena i ruka je spuštena.");
+                }
             }
         }
 

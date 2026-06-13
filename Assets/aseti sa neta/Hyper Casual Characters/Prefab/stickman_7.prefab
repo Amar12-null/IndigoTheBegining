@@ -51,7 +51,7 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: fc45c545af9b8db40946bef8d93b6923, type: 3}
       propertyPath: m_Icon
       value: 
-      objectReference: {fileID: 2974397684917235467, guid: 0000000000000000d000000000000000, type: 0}
+      objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: fc45c545af9b8db40946bef8d93b6923, type: 3}
       propertyPath: m_Name
       value: stickman_7
@@ -78,8 +78,8 @@ Animator:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6332122057602769420}
   m_Enabled: 1
-  m_Avatar: {fileID: 9000000, guid: fc45c545af9b8db40946bef8d93b6923, type: 3}
-  m_Controller: {fileID: 9100000, guid: 7f9d0ccbb329a724b8af67f1f13cde47, type: 2}
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 1ea2e721b82c3274e87798b2f88f12a4, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0

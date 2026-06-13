@@ -89,6 +89,28 @@ namespace Indigo.Game
             DayLost = MoneyManager.CustomersLost;
             DayEarnedAtStart = MoneyManager.TotalEarned;
 
+            // --- POPRAVLJEN UNITY 6 KOD ZA ČIŠĆENJE NPC-EVA ---
+            Customer[] sviGosti = GameObject.FindObjectsByType<Customer>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            foreach (var gost in sviGosti)
+            {
+                if (gost != null) Destroy(gost.gameObject);
+            }
+
+            if (TableManager.Instance != null)
+            {
+                // Popravljen Unity 6 kod za stolove
+                Table[] sviStolovi = GameObject.FindObjectsByType<Table>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+                foreach (var sto in sviStolovi)
+                {
+                    if (sto != null) sto.Release(null); // Prisilno oslobađanje stola
+                }
+                TableManager.Instance.RefreshTables();
+            }
+
+            // Čistimo i UI tikete narudžbi koji su možda ostali visiti
+            OrderRegistry.Clear();
+            // --------------------------------------------------
+
             ApplyDifficulty(CurrentDay);
 
             SetPhase(DayPhase.Active);
