@@ -21,7 +21,6 @@ namespace Indigo.Shop
         private bool _isOpen;
         private readonly List<GameObject> _rows = new List<GameObject>();
 
-        // Boje zlatno-žute tematike tvog kafića
         private readonly Color _themeGold = new Color(0.95f, 0.72f, 0.22f, 1f);       
         private readonly Color _themeGoldMuted = new Color(0.95f, 0.72f, 0.22f, 0.35f); 
         private readonly Color _themeGreenMuted = new Color(0.40f, 0.85f, 0.55f, 0.4f); 
@@ -45,9 +44,7 @@ namespace Indigo.Shop
         void HandleLevel(int _) { RefreshRows(); }
         void HandlePurchased(UpgradeId _) { RefreshRows(); }
 
-        void Update()
-        {
-        }
+        void Update() {}
 
         void BuildPanel()
         {
@@ -62,16 +59,14 @@ namespace Indigo.Shop
             UIFactory.StretchToParent((RectTransform)dim.transform);
             _root = (RectTransform)dim.transform;
 
-            // Glavni panel - 840 širine
             var panel = UIFactory.Panel("ShopPanel", _root, UITheme.Panel, 14);
             var pRt = (RectTransform)panel.transform;
             pRt.anchorMin = new Vector2(0.5f, 0.5f);
             pRt.anchorMax = new Vector2(0.5f, 0.5f);
             pRt.pivot     = new Vector2(0.5f, 0.5f);
-            pRt.sizeDelta = new Vector2(840, 560); 
+            pRt.sizeDelta = new Vector2(840, 640); 
             UIFactory.AddDropShadow(pRt, new Vector2(0, -8), 0.5f, 25, 16f);
 
-            // Elegantno X dugme u ćošku
             var closeBtn = UIFactory.TextButton("CloseX", panel.transform, "X", new Vector2(36, 36));
             var clRt = (RectTransform)closeBtn.transform;
             clRt.anchorMin = new Vector2(1, 1);
@@ -89,7 +84,6 @@ namespace Indigo.Shop
             }
             closeBtn.onClick.AddListener(Close);
 
-            // Mali gornji natpis
             var caption = UIFactory.Label("Caption", panel.transform, "MANAGEMENT STATION", UITheme.FontSmall, _themeGold, TextAnchor.UpperLeft);
             var cRt = caption.rectTransform;
             cRt.anchorMin = new Vector2(0, 1);
@@ -98,7 +92,6 @@ namespace Indigo.Shop
             cRt.anchoredPosition = new Vector2(24, -18);
             cRt.sizeDelta = new Vector2(-100, 22);
 
-            // Glavni naslov
             var title = UIFactory.Label("Title", panel.transform, "Cafe Upgrades & Expansion", UITheme.FontHeader, UITheme.TextPrimary, TextAnchor.UpperLeft);
             title.fontStyle = FontStyle.Bold;
             var tRt = title.rectTransform;
@@ -108,7 +101,6 @@ namespace Indigo.Shop
             tRt.anchoredPosition = new Vector2(24, -38);
             tRt.sizeDelta = new Vector2(-100, 40);
 
-            // Linija separator
             var sep = UIFactory.Panel("Line", panel.transform, new Color(_themeGold.r, _themeGold.g, _themeGold.b, 0.4f));
             var sRt = (RectTransform)sep.transform;
             sRt.anchorMin = new Vector2(0.5f, 1);
@@ -117,41 +109,41 @@ namespace Indigo.Shop
             sRt.anchoredPosition = new Vector2(0, -85);
             sRt.sizeDelta = new Vector2(792, 2); 
 
-            // --- POPRAVKA 1: ISPRAVNO RASTEZANJE SCROLL WINDOW PROZORA ---
             var scrollWindow = new GameObject("ScrollWindow", typeof(RectTransform));
             scrollWindow.transform.SetParent(panel.transform, false);
             var swRt = (RectTransform)scrollWindow.transform;
-            
-            // Umjesto ručnih offseta, rastežemo prozor preko cijelog panela (0 do 1)
             swRt.anchorMin = new Vector2(0f, 0f);
             swRt.anchorMax = new Vector2(1f, 1f);
             swRt.pivot     = new Vector2(0.5f, 1f);
-            // I tek onda zadajemo komotne unutrašnje margine od ivica panela
-            swRt.offsetMin = new Vector2(24, 24);   // Odmak od dna i lijeve ivice
-            swRt.offsetMax = new Vector2(-24, -105); // Odmak od vrha (ispod separatora) i desne ivice
+            swRt.offsetMin = new Vector2(24, 24);   
+            swRt.offsetMax = new Vector2(-24, -105); 
 
             scrollWindow.AddComponent<RectMask2D>();
 
-            // --- POPRAVKA 2: ISPRAVNO RASTEZANJE LISTE ---
             var listGo = new GameObject("List", typeof(RectTransform));
             listGo.transform.SetParent(scrollWindow.transform, false);
             _list = (RectTransform)listGo.transform;
-            
-            // Lista se mora rastezati horizontalno od ivice do ivice prozora (0 do 1)
             _list.anchorMin = new Vector2(0f, 1f); 
             _list.anchorMax = new Vector2(1f, 1f);
             _list.pivot     = new Vector2(0.5f, 1f);
             _list.anchoredPosition = Vector2.zero;
-            _list.offsetMin = Vector2.zero; // Garantuje da puni cijelu širinu
+            _list.offsetMin = Vector2.zero; 
             _list.offsetMax = Vector2.zero;
 
+            // --- POPRAVLJENO: Layout Group dobija donji padding! ---
             var layout = listGo.AddComponent<VerticalLayoutGroup>();
             layout.spacing = 8;
+            layout.padding = new RectOffset(0, 0, 10, 80); // 80 piksela praznog prostora ispod zadnjeg elementa (Bašte)
             layout.childAlignment = TextAnchor.UpperLeft;
             layout.childControlWidth = true;
             layout.childControlHeight = false;
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
+
+            // --- NOVO: Unityjev alat koji automatski kontroliše skrol visinu! ---
+            var fitter = listGo.AddComponent<ContentSizeFitter>();
+            fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
             var scroll = scrollWindow.AddComponent<ScrollRect>();
             scroll.content = _list;
@@ -181,9 +173,6 @@ namespace Indigo.Shop
 
             string categoryTag = $"[{def.Category}] ";
             
-            // --- POPRAVKA 3: PROŠIRENJE TEKSTUALNIH BLOKOVA ---
-            // Pošto red sada napokon puni cijelu širinu od 792px, tekst može bezbjedno početi
-            // od odmaka 24 i rastegnuti se skroz do dugmeta!
             var name = UIFactory.Label("Name", row.transform, categoryTag + def.Name, UITheme.FontBody, UITheme.TextPrimary, TextAnchor.UpperLeft);
             name.fontStyle = FontStyle.Bold;
             var nRt = name.rectTransform;
@@ -191,7 +180,7 @@ namespace Indigo.Shop
             nRt.anchorMax = new Vector2(1, 1);
             nRt.pivot     = new Vector2(0, 1);
             nRt.anchoredPosition = new Vector2(24, -12);
-            nRt.sizeDelta = new Vector2(-190, 22); // Daje ogroman prostor naslovu unutar širokog reda
+            nRt.sizeDelta = new Vector2(-190, 22); 
 
             var desc = UIFactory.Label("Desc", row.transform, def.Description, UITheme.FontSmall, UITheme.TextSecondary, TextAnchor.UpperLeft);
             var dRt = desc.rectTransform;
@@ -199,7 +188,7 @@ namespace Indigo.Shop
             dRt.anchorMax = new Vector2(1, 1);
             dRt.pivot     = new Vector2(0, 1);
             dRt.anchoredPosition = new Vector2(24, -36);
-            dRt.sizeDelta = new Vector2(-190, 28); // Opis se širi komotno, nema više sječenja ivica
+            dRt.sizeDelta = new Vector2(-190, 28); 
 
             var requires = UIFactory.Label("Req", row.transform, "Required Level: " + def.LevelRequired, UITheme.FontSmall, UITheme.TextSecondary, TextAnchor.LowerLeft);
             var rqRt = requires.rectTransform;
@@ -214,7 +203,7 @@ namespace Indigo.Shop
             btRt.anchorMin = new Vector2(1, 0.5f);
             btRt.anchorMax = new Vector2(1, 0.5f);
             btRt.pivot     = new Vector2(1, 0.5f);
-            btRt.anchoredPosition = new Vector2(-24, 0); // Savršeno desno poravnanje unutar novog širokog reda
+            btRt.anchoredPosition = new Vector2(-24, 0); 
             btn.onClick.AddListener(() => OnBuy(def, btn));
 
             return row;
@@ -242,11 +231,6 @@ namespace Indigo.Shop
                 i++;
             }
             
-            if (_list != null)
-            {
-                // Zadržavamo tačan proračun visine za glatki Scroll
-                _list.sizeDelta = new Vector2(_list.sizeDelta.x, Upgrades.Catalog.Length * 80f);
-            }
         }
 
         void RefreshRow(UpgradeDef def, Button btn)
@@ -296,7 +280,10 @@ namespace Indigo.Shop
             _root.gameObject.SetActive(true);
             _root.SetAsLastSibling();
             _isOpen = true;
+
+            BuildRows();
             RefreshRows();
+
             UIEvents.SetPaused(true);
             Cursor.visible = true;
             Cursor.lockState = CursorLockMode.None;

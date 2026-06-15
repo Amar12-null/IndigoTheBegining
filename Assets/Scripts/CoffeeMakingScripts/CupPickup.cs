@@ -7,16 +7,11 @@ public class CupPickup : MonoBehaviour
     public GameObject saucer;       
 
     public bool isPickedUp = false;
-    
     public bool isOnMachine = false;
     public bool isFilled = false;
 
-    
-
     void Start()
     {
-        
-        
         if (coffeeLiquid != null) coffeeLiquid.SetActive(false);
         if (saucer != null) saucer.SetActive(false);
     }
@@ -31,6 +26,9 @@ public class CupPickup : MonoBehaviour
         transform.localPosition = Vector3.zero;
         transform.localRotation = Quaternion.identity;
         
+        // Zvuk uzimanja šolje
+        if (Indigo.Audio.SoundManager.Instance != null)
+            Indigo.Audio.SoundManager.Instance.Play(Indigo.Audio.SfxId.Pickup);
     }
 
     public void PutOnMachine(Transform machineSlot)
@@ -42,6 +40,9 @@ public class CupPickup : MonoBehaviour
         transform.localPosition = Vector3.zero;
         transform.localRotation = Quaternion.identity;
        
+        // Zvuk spuštanja na mašinu
+        if (Indigo.Audio.SoundManager.Instance != null)
+            Indigo.Audio.SoundManager.Instance.Play(Indigo.Audio.SfxId.Place);
     }
 
     public void FillCoffee()
@@ -63,5 +64,9 @@ public class CupPickup : MonoBehaviour
         {
             saucer.SetActive(true);
         }
+
+        // Zvuk spuštanja na tacnu
+        if (Indigo.Audio.SoundManager.Instance != null)
+            Indigo.Audio.SoundManager.Instance.Play(Indigo.Audio.SfxId.Place);
     }
 }

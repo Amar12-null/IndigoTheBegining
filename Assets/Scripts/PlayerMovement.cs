@@ -31,7 +31,6 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
-        // Kolegin sistem zaustavlja kretanje kada je igra pauzirana
         if (UIEvents.IsPaused) return; 
 
         float horizontal = Input.GetAxis("Horizontal");
@@ -51,8 +50,16 @@ public class PlayerMovement : MonoBehaviour
         if (move.magnitude > 1f) move.Normalize();
 
         bool isRunning = Input.GetKey(KeyCode.LeftShift);
-        float currentSpeed = isRunning ? runSpeed : walkSpeed;
+        
+        // --- NOVO: PROVJERA ZA BRZINU TRČANJA ---
+        float actualRunSpeed = runSpeed;
+        // Ako je igrač kupio RunningShoes, dodaj mu 0.5 na brzinu trčanja!
+        if (Indigo.Shop.Upgrades.IsOwned(Indigo.Shop.UpgradeId.RunningShoes)) 
+        {
+            actualRunSpeed += 0.5f;
+        }
 
+        float currentSpeed = isRunning ? actualRunSpeed : walkSpeed;
         moveDirection = move * currentSpeed;
     
         if (cameraScript != null && cameraScript.isFirstPerson)

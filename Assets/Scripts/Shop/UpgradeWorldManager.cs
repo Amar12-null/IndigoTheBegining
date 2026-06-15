@@ -47,35 +47,39 @@ namespace Indigo.Shop
                 }
             }
 
-            // Interior 3
+            // --- POPRAVLJENO: Interior 3 je sada ispravno vezan za svoj 3D objekat ---
             if (interior3 != null)
             {
                 bool shouldBeActive = Upgrades.IsOwned(UpgradeId.Interior3);
                 if (interior3.activeSelf != shouldBeActive)
                 {
-                    interior3.SetActive(shouldBeActive);
+                    interior3.SetActive(shouldBeActive); // POPRAVLJENO: Aktivira interior3, a ne interior2!
                     triggerTableRefresh = true;
                 }
             }
 
-            // Dekoracije
+            // --- POPRAVLJENO: Sigurna provjera za dekoracije ---
             if (dekoracije != null)
             {
-                dekoracije.SetActive(Upgrades.IsOwned(UpgradeId.Decorations));
+                bool shouldBeActive = Upgrades.IsOwned(UpgradeId.Decorations);
+                if (dekoracije.activeSelf != shouldBeActive)
+                {
+                    dekoracije.SetActive(shouldBeActive);
+                }
             }
 
-            // Bašta
+            // --- POPRAVLJENO: Bašta sada ispravno javlja menadžeru stolova da osvježi goste ---
             if (basta != null)
             {
                 bool shouldBeActive = Upgrades.IsOwned(UpgradeId.Garden);
                 if (basta.activeSelf != shouldBeActive)
                 {
                     basta.SetActive(shouldBeActive);
-                    triggerTableRefresh = true;
+                    triggerTableRefresh = true; // NOVO: Bašta sada takođe dodaje nove stolove u igru!
                 }
             }
 
-            // Ako se otključala prostorija, osvježi stolove za goste
+            // Ako se otključala bilo koja prostorija ili bašta, osvježi stolove za goste
             if (triggerTableRefresh && TableManager.Instance != null)
             {
                 TableManager.Instance.RefreshTables();

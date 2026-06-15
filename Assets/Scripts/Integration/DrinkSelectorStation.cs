@@ -5,16 +5,12 @@ using Indigo.UI;
 
 namespace Indigo.Integration
 {
-    /// <summary>
-    /// Stoji pored Amarove CoffeeMachineSlot. Igrač pritiskom 1-4 bira tip pića
-    /// dok je u trigger zoni, a kad mašina napuni šolje, ova skripta im dodjeljuje izabrani drinkType.
-    /// </summary>
     public class DrinkSelectorStation : MonoBehaviour
     {
         [Tooltip("Referenca na Amarov CoffeeMachineSlot.")]
         public CoffeeMachineSlot machine;
 
-        [Tooltip("Tipke 1-4 → Espresso, Cappuccino, Latte, Americano (poredak prema OrderType enum-u).")]
+        [Tooltip("Tipke 1-4 → Espresso, Cappuccino, Latte, Americano.")]
         public KeyCode[] selectKeys = { KeyCode.Alpha1, KeyCode.Alpha2, KeyCode.Alpha3, KeyCode.Alpha4 };
 
         public OrderType Selected { get; private set; } = OrderType.Espresso;
@@ -29,6 +25,20 @@ namespace Indigo.Integration
             if (_playerNear) HandleSelectKeys();
 
             AssignDrinkTypeToBrewedCups();
+            
+            if (machine != null && machine.cupSlots != null)
+            {
+                bool hasFilledCup = false;
+                foreach (var slot in machine.cupSlots)
+                {
+                    if (slot != null && slot.childCount > 0)
+                    {
+                        var cup = slot.GetComponentInChildren<CupPickup>();
+                        if (cup != null && cup.isFilled) hasFilledCup = true;
+                    }
+                }
+                if (!hasFilledCup) _assignedThisBatch.Clear();
+            }
         }
 
         void HandleSelectKeys()
@@ -38,11 +48,15 @@ namespace Indigo.Integration
                 if (Input.GetKeyDown(selectKeys[i]))
                 {
                     Selected = (OrderType)i;
-                    UIEvents.SetPrompt("", "Selected: " + Selected.DisplayName());
+                    
+                    // Ostavljamo ispis samo kao brzu potvrdu kad pritisneš tipku!
+                    string formattedText = $"   Selected: {Selected.DisplayName()}   ";
+                    UIEvents.SetPrompt("OK", formattedText);
                 }
             }
         }
 
+        // --- VRAĆENA FUNKCIJA KOJA JE NEDOSTAJALA ---
         void AssignDrinkTypeToBrewedCups()
         {
             if (machine == null || machine.cupSlots == null) return;
@@ -64,14 +78,12 @@ namespace Indigo.Integration
         {
             if (!other.CompareTag("Player")) return;
             _playerNear = true;
-            UIEvents.SetPrompt("1-4", "Select drink (" + Selected.DisplayName() + ")");
         }
 
         void OnTriggerExit(Collider other)
         {
             if (!other.CompareTag("Player")) return;
             _playerNear = false;
-            UIEvents.ClearPrompt();
         }
     }
 }

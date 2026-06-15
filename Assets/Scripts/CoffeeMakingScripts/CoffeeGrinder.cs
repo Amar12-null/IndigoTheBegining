@@ -1,13 +1,17 @@
 using UnityEngine;
-using Indigo.Machines; // Pristup progress traci
+using Indigo.Machines; 
 
 public class CoffeeGrinder : MonoBehaviour
 {
-    public Transform playerHand; // Referenca na desnu ruku
+    public Transform playerHand; 
     
     [Header("Mlin Postavke")]
-    public float timeToGrind = 1.5f; // Koliko sekundi držiš klik
-    public Vector3 uiLocalOffset = new Vector3(0f, 1.0f, 0f); // Pozicija trake iznad mlina
+    public float timeToGrind = 1.5f; 
+    public Vector3 uiLocalOffset = new Vector3(0f, 1.0f, 0f); 
+    
+    // --- NOVO: Referenca za zvučnik mlina ---
+    [Header("Audio")]
+    public AudioSource grinderAudio;
     
     private float currentGrindTimer = 0f;
     private bool playerNear = false;
@@ -15,7 +19,6 @@ public class CoffeeGrinder : MonoBehaviour
 
     void Start()
     {
-        // Automatski stvaramo traku iznad mlina na startu igre
         _progressUI = MachineProgressWorldUI.Create(transform, uiLocalOffset);
     }
 
@@ -25,54 +28,77 @@ public class CoffeeGrinder : MonoBehaviour
         {
             PortafilterPickup heldPortafilter = playerHand.GetComponentInChildren<PortafilterPickup>();
 
-            // Ako držiš portafilter i on je PRAZAN ili USED
             if (heldPortafilter != null && 
                (heldPortafilter.currentState == PortafilterPickup.PortafilterState.Empty 
                 || heldPortafilter.currentState == PortafilterPickup.PortafilterState.UsedCoffee))
             {
-                // NOVO: Sada provjeravamo da li igrač drži LIJEVI KLIK na mišu
                 if (Input.GetMouseButton(0)) 
                 {
+                    // --- NOVO: Palimo zvuk samo u prvom frejmu klika ---
+                    if (Input.GetMouseButtonDown(0))
+                    {
+                        if (grinderAudio != null) 
+                        {
+                            // Ubrzavamo zvuk ako imamo FastGrind upgrade
+                            grinderAudio.pitch = Indigo.Shop.Upgrades.IsOwned(Indigo.Shop.UpgradeId.FastGrind) ? 2f : 1f;
+                            grinderAudio.Play();
+                        }
+                    }
+
                     currentGrindTimer += Time.deltaTime;
 
-                    // Izračunavamo procenat i šaljemo našoj traci na ekranu
-                    float fraction = currentGrindTimer / timeToGrind;
-                    bool isDone = currentGrindTimer >= timeToGrind;
+                    // Provjera brzine na osnovu upgrade-a
+                    float actualGrindTime = Indigo.Shop.Upgrades.IsOwned(Indigo.Shop.UpgradeId.FastGrind) ? timeToGrind * 0.5f : timeToGrind;
+                    
+                    float fraction = currentGrindTimer / actualGrindTime;
+                    bool isDone = currentGrindTimer >= actualGrindTime;
                     
                     if (_progressUI != null) _progressUI.UpdateProgress(fraction, isDone);
 
-                    Debug.Log("Meljem kafu mišem... " + Mathf.RoundToInt(fraction * 100) + "%");
-
                     if (isDone)
                     {
-                        // Pozivamo funkciju koja mijenja state i PALI vizual
                         heldPortafilter.FillWithCoffee();
-                        
                         currentGrindTimer = 0f;
-                        Debug.Log("Kafa spremna! Nosi na aparat.");
-                        
-                        // Gasimo traku nakon uspjeha
                         if (_progressUI != null) _progressUI.UpdateProgress(0f);
+                        
+                        // Napomena: NE gasimo zvuk ovdje, kako bi se čuo tvoj "ding" na kraju fajla!
                     }
                 }
-                // NOVO: Ako igrač pusti lijevi klik miša
                 else if (Input.GetMouseButtonUp(0))
                 {
-                    currentGrindTimer = 0f; // Resetujemo progres ako pustiš prerano
-                    
-                    // Sakrij traku
+                    currentGrindTimer = 0f; 
                     if (_progressUI != null) _progressUI.UpdateProgress(0f);
+                    
+                    // --- NOVO: Ako igrač pusti klik PRIJE vremena, nasilno gasi zvuk da ne čujemo "ding" lažno! ---
+                    if (grinderAudio != null) grinderAudio.Stop();
                 }
             }
             else
             {
-                // Sigurnosni reset ako portafilter više nije u ispravnom stanju
+                // Sigurnosni reset
                 if (currentGrindTimer > 0f)
                 {
                     currentGrindTimer = 0f;
                     if (_progressUI != null) _progressUI.UpdateProgress(0f);
+                    if (grinderAudio != null) grinderAudio.Stop();
                 }
             }
+                // --- UI TUTORIJAL ZA MLIN ---
+            if (Indigo.Settings.TutorialSettings.ShowTutorial && currentGrindTimer == 0f)
+            {
+                if (heldPortafilter != null && 
+                   (heldPortafilter.currentState == PortafilterPickup.PortafilterState.Empty || 
+                    heldPortafilter.currentState == PortafilterPickup.PortafilterState.UsedCoffee))
+                {
+                    // Napomena: Mlin radi na držanje klika, pa pišemo tako
+                    Indigo.UI.UIEvents.SetPrompt("Drži Klik", "Samelji kafu");
+                }
+                else
+                {
+                    Indigo.UI.UIEvents.SetPrompt("", "");
+                }
+            }
+
         }
     }
 
@@ -86,10 +112,12 @@ public class CoffeeGrinder : MonoBehaviour
         if (other.CompareTag("Player")) 
         {
             playerNear = false;
-            
-            // Ako igrač pobjegne od mlina dok melje, resetujemo progres i sklanjamo traku
             currentGrindTimer = 0f;
             if (_progressUI != null) _progressUI.UpdateProgress(0f);
+            
+            // --- NOVO: Ako igrač pobjegne od mlina, takođe ugasi zvuk! ---
+            if (grinderAudio != null) grinderAudio.Stop();
+        Indigo.UI.UIEvents.SetPrompt("", "");
         }
     }
 }

@@ -29,6 +29,14 @@ public class TrayStation : MonoBehaviour
         // Ako je igrač blizu stola i pritisne E, pozivamo logiku sa tacne
         if (isPlayerNear && Input.GetKeyDown(KeyCode.E))
         {
+            // --- NOVO: PROVJERA DA LI JE TACNA KUPLJENA ---
+            if (!Indigo.Shop.Upgrades.IsOwned(Indigo.Shop.UpgradeId.ServingTray))
+            {
+                // Ispisujemo igraču da prvo mora kupiti tacnu u shopu
+                Indigo.UI.UIEvents.SetPrompt("", "Morate kupiti tacnu u Management Station-u!");
+                return; // Prekidamo dalje izvršavanje
+            }
+
             if (servingTrayScript != null)
             {
                 servingTrayScript.InteractWithTray();

@@ -13,7 +13,11 @@ namespace Indigo.Shop
         Interior2,
         Interior3,
         Decorations,
-        Garden
+        Garden,
+        RunningShoes,
+        ServingTray,
+        FastBrew,
+        FastGrind
     }
 
     public class UpgradeDef
@@ -35,11 +39,14 @@ namespace Indigo.Shop
             new UpgradeDef { Id = UpgradeId.ReputationSign,   Name = "Reputation Sign",    Description = "Gosti su sretni duže (lakše dobiti Happy tier)", Price = 75,  LevelRequired = 3, Category = "LOGISTICS" },
             new UpgradeDef { Id = UpgradeId.MarketingPosters, Name = "Marketing Posters",  Description = "+1 maksimalan broj istovremenih gostiju", Price = 120, LevelRequired = 5, Category = "LOGISTICS" },
             
-            // --- NOVO: FIZIČKE NADOGRADNJE U KATALOGU ---
+            new UpgradeDef { Id = UpgradeId.RunningShoes, Name = "Running Shoes", Description = "Trči brže", Price = 100, LevelRequired = 1, Category = "LOGISTICS" },
+            new UpgradeDef { Id = UpgradeId.ServingTray,  Name = "Serving Tray",  Description = "Otključaj tacnu za nošenje više kafa odjednom", Price = 150, LevelRequired = 2, Category = "LOGISTICS" },
+            new UpgradeDef { Id = UpgradeId.FastBrew,     Name = "Pro Espresso",  Description = "Aparat za kafu radi duplo brže", Price = 250, LevelRequired = 3, Category = "LOGISTICS" },
+            new UpgradeDef { Id = UpgradeId.FastGrind,    Name = "Turbo Grinder", Description = "Mlin melje kafu duplo brže", Price = 200, LevelRequired = 3, Category = "LOGISTICS" },
             new UpgradeDef { Id = UpgradeId.Interior2,        Name = "Expand: Interior 2", Description = "Otključaj novu salu i dodatne stolove za goste", Price = 200, LevelRequired = 2, Category = "EXPANSION" },
             new UpgradeDef { Id = UpgradeId.Interior3,        Name = "Expand: Interior 3", Description = "Otključaj novu salu i dodatne stolove za goste", Price = 200, LevelRequired = 2, Category = "EXPANSION" },
-            new UpgradeDef { Id = UpgradeId.Decorations,      Name = "Cafe Decorations",   Description = "Uljepšaj kafić biljkama i modernim slikama", Price = 100, LevelRequired = 3, Category = "VISUAL" },
-            new UpgradeDef { Id = UpgradeId.Garden,           Name = "Open: Cozy Garden",  Description = "Otvori prelijepu baštu ispred kafića", Price = 350, LevelRequired = 4, Category = "EXPANSION" }
+            new UpgradeDef { Id = UpgradeId.Garden,           Name = "Open: Cozy Garden",  Description = "Otvori  baštu ispred kafića", Price = 350, LevelRequired = 4, Category = "EXPANSION" },
+            new UpgradeDef { Id = UpgradeId.Decorations,      Name = "Cafe Decorations",   Description = "Uljepšaj kafić biljkama i modernim slikama", Price = 400, LevelRequired = 5, Category = "VISUAL" }
         };
 
         private static readonly HashSet<UpgradeId> _owned = new HashSet<UpgradeId>();

@@ -5,21 +5,8 @@ namespace Indigo.Audio
 {
     public enum SfxId
     {
-        Pickup,
-        Drop,
-        Place,
-        BrewStart,
-        BrewLoop,
-        BrewDone,
-        DeliverySuccess,
-        TipCoin,
-        LevelUp,
-        Purchase,
-        DayStart,
-        DayEnd,
-        CustomerAngry,
-        DoorOpen,
-        ButtonClick,
+        Pickup, Drop, Place, BrewStart, BrewLoop, BrewDone, DeliverySuccess,
+        TipCoin, LevelUp, Purchase, DayStart, DayEnd, CustomerAngry, DoorOpen, ButtonClick,
     }
 
     [System.Serializable]
@@ -44,8 +31,10 @@ namespace Indigo.Audio
         [Header("SFX library")]
         public SfxEntry[] sfx;
 
-        [Header("Music")]
-        public AudioClip ambientMusic;
+        // --- NOVO: PLEJLISTA ZA POZADINSKU MUZIKU ---
+        [Header("Music Playlist")]
+        [Tooltip("Ubaci svojih 6 audio fajlova ovdje!")]
+        public AudioClip[] ambientMusicPlaylist; 
         public bool loopMusic = true;
 
         [Header("Pool")]
@@ -63,7 +52,13 @@ namespace Indigo.Audio
             BuildIndex();
             BuildPool();
             BuildMusicSource();
-            if (ambientMusic != null) PlayMusic(ambientMusic);
+            
+            // --- NOVO: BIRA NASUMIČNU PJESMU IZ TVOJE PLEJLISTE ---
+            if (ambientMusicPlaylist != null && ambientMusicPlaylist.Length > 0)
+            {
+                AudioClip randomSong = ambientMusicPlaylist[Random.Range(0, ambientMusicPlaylist.Length)];
+                PlayMusic(randomSong);
+            }
         }
 
         void OnDestroy()
@@ -102,7 +97,7 @@ namespace Indigo.Audio
             go.transform.SetParent(transform, false);
             _musicSource = go.AddComponent<AudioSource>();
             _musicSource.playOnAwake = false;
-            _musicSource.loop = loopMusic;
+            _musicSource.loop = loopMusic; // Muzika će se ponavljati zahvaljujući ovoj liniji
             _musicSource.spatialBlend = 0f;
         }
 
