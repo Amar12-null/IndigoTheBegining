@@ -91,6 +91,7 @@ namespace Indigo.Customers
             fRt.anchoredPosition = Vector2.zero;
             fRt.sizeDelta = new Vector2(trackWidth, 0);
             bubble._patienceFill = fill.GetComponent<Image>();
+            UIGradient.Apply(bubble._patienceFill, Color.white, new Color(0.78f, 0.78f, 0.82f, 1f));
             bubble._patienceFillRt = fRt;
             bubble._patienceFillFullWidth = trackWidth;
 

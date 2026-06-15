@@ -57,7 +57,103 @@ namespace Indigo.UI
             t.horizontalOverflow = HorizontalWrapMode.Overflow;
             t.verticalOverflow = VerticalWrapMode.Overflow;
             t.raycastTarget = false;
+            // Subtle drop shadow for crisp legibility over the 3D scene.
+            AddTextShadow(t);
             return t;
+        }
+
+        /// <summary>Adds a soft shadow under a text label (idempotent).</summary>
+        public static Shadow AddTextShadow(Text t, Vector2? offset = null, Color? color = null)
+        {
+            var sh = t.GetComponent<Shadow>();
+            if (sh == null) sh = t.gameObject.AddComponent<Shadow>();
+            sh.effectColor    = color  ?? UITheme.TextShadow;
+            sh.effectDistance = offset ?? new Vector2(1f, -1.5f);
+            sh.useGraphicAlpha = true;
+            return sh;
+        }
+
+        /// <summary>Applies a vertical colour gradient to a label (top → bottom).</summary>
+        public static void GradientLabel(Text t, Color top, Color bottom)
+        {
+            UIGradient.Apply(t, top, bottom);
+        }
+
+        /// <summary>Full-stretch gradient backdrop for menus/overlays.</summary>
+        public static GameObject GradientBackdrop(string name, Transform parent, Color top, Color bottom)
+        {
+            var go = Panel(name, parent, Color.white);
+            StretchToParent((RectTransform)go.transform);
+            UIGradient.Apply(go.GetComponent<Image>(), top, bottom);
+            return go;
+        }
+
+        /// <summary>Thin rounded outline drawn just behind a target rect.</summary>
+        public static GameObject AddStroke(RectTransform target, Color color, float thickness = 1.5f, int radius = 16)
+        {
+            var go = new GameObject("Stroke", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            go.transform.SetParent(target.parent, false);
+            go.transform.SetSiblingIndex(target.GetSiblingIndex());
+
+            var rt = (RectTransform)go.transform;
+            rt.anchorMin = target.anchorMin;
+            rt.anchorMax = target.anchorMax;
+            rt.pivot = target.pivot;
+            rt.sizeDelta = target.sizeDelta + new Vector2(thickness * 2f, thickness * 2f);
+            rt.anchoredPosition = target.anchoredPosition;
+
+            var img = go.GetComponent<Image>();
+            img.color = color;
+            img.raycastTarget = false;
+            img.sprite = UIRounded.Sprite(radius);
+            img.type = Image.Type.Sliced;
+            return go;
+        }
+
+        /// <summary>Full-screen radial vignette overlay (darkens toward the edges).</summary>
+        public static GameObject AddVignette(Transform parent, float strength = 0.5f)
+        {
+            var go = new GameObject("Vignette", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            go.transform.SetParent(parent, false);
+            StretchToParent((RectTransform)go.transform);
+            var img = go.GetComponent<Image>();
+            img.sprite = VignetteSprite();
+            img.type = Image.Type.Simple;
+            img.color = new Color(0f, 0f, 0f, Mathf.Clamp01(strength));
+            img.raycastTarget = false;
+            return go;
+        }
+
+        static Sprite _vignette;
+        /// <summary>Procedurally generated radial alpha mask: clear centre → opaque corners.</summary>
+        public static Sprite VignetteSprite()
+        {
+            if (_vignette != null) return _vignette;
+
+            const int size = 256;
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
+            {
+                wrapMode = TextureWrapMode.Clamp,
+                filterMode = FilterMode.Bilinear
+            };
+
+            var px = new Color32[size * size];
+            Vector2 c = new Vector2((size - 1) * 0.5f, (size - 1) * 0.5f);
+            float maxD = c.magnitude;
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float d = (new Vector2(x, y) - c).magnitude / maxD;   // 0 centre … 1 corner
+                    float a = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.55f, 1.0f, d));
+                    px[y * size + x] = new Color32(255, 255, 255, (byte)(a * 255));
+                }
+            }
+            tex.SetPixels32(px);
+            tex.Apply(false, true);
+
+            _vignette = UnityEngine.Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f);
+            return _vignette;
         }
 
         public static Button TextButton(string name, Transform parent, string label, Vector2 size)
@@ -92,18 +188,32 @@ namespace Indigo.UI
             var fimg = face.GetComponent<Image>();
             fimg.sprite = UIRounded.Sprite(14);
             fimg.type = Image.Type.Sliced;
-            fimg.color = UITheme.PanelLight;
+            // White base so the Button's colour transition drives the visible tint
+            // cleanly (otherwise normal/hover get multiplied twice and never brighten).
+            fimg.color = Color.white;
+            // Soft top-to-bottom sheen so the face reads as a raised surface.
+            UIGradient.Apply(fimg, new Color(1.0f, 1.0f, 1.0f, 1f), new Color(0.86f, 0.86f, 0.92f, 1f));
+
+            // Hairline highlight along the top edge of the face for definition.
+            var topLine = Panel("TopHighlight", face.transform, UITheme.Stroke, 2);
+            var tlRt = (RectTransform)topLine.transform;
+            tlRt.anchorMin = new Vector2(0, 1);
+            tlRt.anchorMax = new Vector2(1, 1);
+            tlRt.pivot     = new Vector2(0.5f, 1);
+            tlRt.offsetMin = new Vector2(6, -2);
+            tlRt.offsetMax = new Vector2(-6, 0);
+            topLine.GetComponent<Image>().raycastTarget = false;
 
             var btn = go.GetComponent<Button>();
             btn.targetGraphic = fimg;
             var colors = btn.colors;
             colors.normalColor      = UITheme.PanelLight;
-            colors.highlightedColor = UITheme.AccentHover;
-            colors.pressedColor     = UITheme.AccentPressed;
+            colors.highlightedColor = new Color(0.30f, 0.32f, 0.40f, 1f); // gentle lighten — text stays legible
+            colors.pressedColor     = UITheme.Accent;                      // accent flash on press
             colors.selectedColor    = UITheme.PanelLight;
-            colors.disabledColor    = new Color(0.3f, 0.3f, 0.3f, 0.6f);
+            colors.disabledColor    = new Color(0.22f, 0.23f, 0.28f, 0.7f);
             colors.colorMultiplier  = 1f;
-            colors.fadeDuration     = 0.1f;
+            colors.fadeDuration     = 0.12f;
             btn.colors = colors;
 
             var text = Label("Label", go.transform, label, UITheme.FontBody, UITheme.TextPrimary);
@@ -133,6 +243,7 @@ namespace Indigo.UI
             var go = Panel(name, parent, UITheme.KeyCapBg, 6);
             var rt = (RectTransform)go.transform;
             rt.sizeDelta = new Vector2(32, 32);
+            UIGradient.Apply(go.GetComponent<Image>(), Color.white, new Color(0.80f, 0.82f, 0.86f, 1f));
             var label = Label("Key", go.transform, key, UITheme.FontSmall, UITheme.KeyCapText);
             label.fontStyle = FontStyle.Bold;
             var lrt = label.rectTransform;
@@ -172,6 +283,7 @@ namespace Indigo.UI
             fillRt.anchorMin = Vector2.zero;
             fillRt.anchorMax = Vector2.one;
             fillRt.sizeDelta = Vector2.zero;
+            UIGradient.Apply(fill.GetComponent<Image>(), UITheme.AccentHover, UITheme.AccentPressed);
 
             var handleArea = new GameObject("Handle Slide Area", typeof(RectTransform));
             handleArea.transform.SetParent(go.transform, false);
@@ -181,9 +293,11 @@ namespace Indigo.UI
             haRt.offsetMin = new Vector2(10, 0);
             haRt.offsetMax = new Vector2(-10, 0);
 
-            var handle = Panel("Handle", handleArea.transform, UITheme.TextPrimary, 10);
+            var handle = Panel("Handle", handleArea.transform, UITheme.TextPrimary, 11);
             var hRt = (RectTransform)handle.transform;
-            hRt.sizeDelta = new Vector2(20, 20);
+            hRt.sizeDelta = new Vector2(22, 22);
+            UIGradient.Apply(handle.GetComponent<Image>(), Color.white, new Color(0.80f, 0.82f, 0.86f, 1f));
+            AddDropShadow(hRt, new Vector2(0, -2), 0.30f, 11, 4f);
 
             var slider = go.GetComponent<Slider>();
             slider.targetGraphic = handle.GetComponent<Image>();

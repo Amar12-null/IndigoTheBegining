@@ -45,8 +45,8 @@ namespace Indigo.UI
 
             var root = (RectTransform)canvasGo.transform;
 
-            var bg = UIFactory.Panel("Background", root, new Color(0.05f, 0.06f, 0.09f, 1f));
-            UIFactory.StretchToParent((RectTransform)bg.transform);
+            UIFactory.GradientBackdrop("Background", root, UITheme.BackdropTop, UITheme.BackdropBottom);
+            UIFactory.AddVignette(root, 0.55f);
 
             var accentBar = UIFactory.Panel("AccentBar", root, UITheme.Accent, 4);
             var abRt = (RectTransform)accentBar.transform;
@@ -58,6 +58,8 @@ namespace Indigo.UI
 
             var title = UIFactory.Label("Title", root, GameTitle, UITheme.FontTitle, UITheme.TextPrimary, TextAnchor.MiddleLeft);
             title.fontStyle = FontStyle.Bold;
+            UIFactory.GradientLabel(title, UITheme.TextPrimary, new Color(0.62f, 0.78f, 0.86f, 1f));
+            UIFactory.AddTextShadow(title, new Vector2(2f, -3f), new Color(0f, 0f, 0f, 0.55f));
             var tRt = title.rectTransform;
             tRt.anchorMin = new Vector2(0, 0.5f);
             tRt.anchorMax = new Vector2(0, 0.5f);

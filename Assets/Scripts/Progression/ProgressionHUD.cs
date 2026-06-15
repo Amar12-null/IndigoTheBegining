@@ -91,6 +91,7 @@ namespace Indigo.Progression
             _xpFillRt.anchoredPosition = Vector2.zero;
             _xpFillRt.sizeDelta = new Vector2(_trackWidth, 0);
             _xpFill = fill.GetComponent<Image>();
+            UIGradient.Apply(_xpFill, UITheme.AccentHover, UITheme.AccentPressed);
 
             _xpLabel = UIFactory.Label("XpText", _panel, "0 / 40 XP", UITheme.FontSmall, UITheme.TextSecondary, TextAnchor.LowerRight);
             var xRt = _xpLabel.rectTransform;
