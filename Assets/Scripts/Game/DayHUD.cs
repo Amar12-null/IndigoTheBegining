@@ -71,6 +71,7 @@ namespace Indigo.Game
             _timeFillRt.anchoredPosition = Vector2.zero;
             _timeFillRt.sizeDelta = new Vector2(_trackWidth, 0);
             _timeFill = fill.GetComponent<Image>();
+            UIGradient.Apply(_timeFill, Color.white, new Color(0.78f, 0.78f, 0.82f, 1f));
         }
 
         Transform FindHudParent()
@@ -107,8 +108,8 @@ namespace Indigo.Game
             if (_timeFill != null)
             {
                 _timeFill.color = frac < 0.2f
-                    ? new Color(0.92f, 0.36f, 0.32f, 1f)
-                    : (frac < 0.45f ? new Color(0.98f, 0.74f, 0.30f, 1f) : UITheme.Accent);
+                    ? UITheme.Danger
+                    : (frac < 0.45f ? UITheme.Warning : UITheme.Accent);
             }
         }
     }

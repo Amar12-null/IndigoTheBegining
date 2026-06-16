@@ -64,8 +64,9 @@ namespace Indigo.Shop
             pRt.anchorMin = new Vector2(0.5f, 0.5f);
             pRt.anchorMax = new Vector2(0.5f, 0.5f);
             pRt.pivot     = new Vector2(0.5f, 0.5f);
-            pRt.sizeDelta = new Vector2(840, 640); 
+            pRt.sizeDelta = new Vector2(840, 560);
             UIFactory.AddDropShadow(pRt, new Vector2(0, -8), 0.5f, 25, 16f);
+            UIFactory.AddStroke(pRt, UITheme.Stroke, 1.5f, 14);
 
             var closeBtn = UIFactory.TextButton("CloseX", panel.transform, "X", new Vector2(36, 36));
             var clRt = (RectTransform)closeBtn.transform;

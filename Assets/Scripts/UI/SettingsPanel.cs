@@ -41,6 +41,7 @@ namespace Indigo.UI
             _cardRt.pivot     = new Vector2(0.5f, 0.5f);
             _cardRt.sizeDelta = new Vector2(520, 460);
             UIFactory.AddDropShadow(_cardRt, new Vector2(0, -8), 0.45f, 24, 18f);
+            UIFactory.AddStroke(_cardRt, UITheme.Stroke, 1.5f, 20);
 
             var title = UIFactory.Label("Title", card.transform, "SETTINGS", UITheme.FontHeader, UITheme.TextPrimary, TextAnchor.UpperLeft);
             title.fontStyle = FontStyle.Bold;

@@ -52,6 +52,7 @@ namespace Indigo.Game
             pRt.pivot     = new Vector2(0.5f, 0.5f);
             pRt.sizeDelta = new Vector2(480, 460);
             UIFactory.AddDropShadow(pRt, new Vector2(0, -6), 0.45f, 20, 14f);
+            UIFactory.AddStroke(pRt, UITheme.Stroke, 1.5f, 18);
 
             var accent = UIFactory.Panel("Accent", panel.transform, UITheme.Accent, 2);
             var aRt = (RectTransform)accent.transform;
@@ -137,6 +138,19 @@ namespace Indigo.Game
             return gameUI.transform.Find("GameUI_Canvas/HUD");
         }
 
+        static Color RatingColor(string rating)
+        {
+            if (string.IsNullOrEmpty(rating)) return UITheme.Accent;
+            switch (rating.Trim().ToUpperInvariant()[0])
+            {
+                case 'S':
+                case 'A': return UITheme.Success;
+                case 'B': return UITheme.Accent;
+                case 'C': return UITheme.Warning;
+                default:  return UITheme.Danger;
+            }
+        }
+
         void Show(DaySummary s)
         {
             if (_root == null) return;
@@ -144,7 +158,11 @@ namespace Indigo.Game
             _root.SetAsLastSibling();
 
             if (_dayLabel    != null) _dayLabel.text    = "DAY " + s.Day;
-            if (_ratingLabel != null) _ratingLabel.text = s.Rating;
+            if (_ratingLabel != null)
+            {
+                _ratingLabel.text  = s.Rating;
+                _ratingLabel.color = RatingColor(s.Rating);
+            }
             if (_servedLabel != null) _servedLabel.text = s.CustomersServed.ToString();
             if (_lostLabel   != null) _lostLabel.text   = s.CustomersLost.ToString();
             if (_earnedLabel != null) _earnedLabel.text = "$" + s.Earned;

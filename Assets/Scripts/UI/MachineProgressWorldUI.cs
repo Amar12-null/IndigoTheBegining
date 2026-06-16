@@ -59,6 +59,7 @@ namespace Indigo.Machines
             fRt.sizeDelta = new Vector2(148f, 0); // Puna širina unutar tracka
 
             ui._fillImage = fill.GetComponent<Image>();
+            UIGradient.Apply(ui._fillImage, Color.white, new Color(0.78f, 0.78f, 0.82f, 1f));
             
             // Na početku sakrijemo UI jer mašina ne radi ništa
             ui._cg.alpha = 0f;

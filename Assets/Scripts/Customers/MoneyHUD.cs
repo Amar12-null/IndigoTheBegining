@@ -50,7 +50,7 @@ namespace Indigo.Customers
 
             UIFactory.AddDropShadow(_panel, new Vector2(0, -4), 0.35f, 18, 10f);
 
-            var accent = UIFactory.Panel("Accent", _panel, UITheme.Accent, 2);
+            var accent = UIFactory.Panel("Accent", _panel, UITheme.Gold, 2);
             var aRt = (RectTransform)accent.transform;
             aRt.anchorMin = new Vector2(0, 0);
             aRt.anchorMax = new Vector2(0, 1);
@@ -66,7 +66,7 @@ namespace Indigo.Customers
             cRt.anchoredPosition = new Vector2(16, -10);
             cRt.sizeDelta = new Vector2(-24, 18);
 
-            _amountLabel = UIFactory.Label("Amount", _panel, currencyPrefix + "0", UITheme.FontHeader, UITheme.TextPrimary, TextAnchor.MiddleLeft);
+            _amountLabel = UIFactory.Label("Amount", _panel, currencyPrefix + "0", UITheme.FontHeader, UITheme.Gold, TextAnchor.MiddleLeft);
             _amountLabel.fontStyle = FontStyle.Bold;
             var lRt = _amountLabel.rectTransform;
             lRt.anchorMin = new Vector2(0, 0);
