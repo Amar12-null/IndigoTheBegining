@@ -3,13 +3,12 @@ using UnityEngine;
 public class TrayStation : MonoBehaviour
 {
     [Header("Poveznica sa tacnom")]
-    public ServingTray servingTrayScript; // Ovdje uvuci tacnu iz hijerarhije
+    public ServingTray servingTrayScript;
 
     private bool isPlayerNear = false;
 
     private void OnTriggerEnter(Collider other)
     {
-        // Provjeravamo da li je Player ušao u Box Collider
         if (other.CompareTag("Player"))
         {
             isPlayerNear = true;
@@ -21,24 +20,56 @@ public class TrayStation : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             isPlayerNear = false;
+            // Čistimo UI sa ekrana čim se odmakneš od stola!
+            Indigo.UI.UIEvents.SetPrompt("", "");
         }
     }
 
     private void Update()
     {
-        // Ako je igrač blizu stola i pritisne E, pozivamo logiku sa tacne
-        if (isPlayerNear && Input.GetKeyDown(KeyCode.E))
+        if (isPlayerNear && servingTrayScript != null)
         {
-            // --- NOVO: PROVJERA DA LI JE TACNA KUPLJENA ---
-            if (!Indigo.Shop.Upgrades.IsOwned(Indigo.Shop.UpgradeId.ServingTray))
+            // --- 1. TUTORIJAL UI PRIKAZ ---
+            if (Indigo.Settings.TutorialSettings.ShowTutorial)
             {
-                // Ispisujemo igraču da prvo mora kupiti tacnu u shopu
-                Indigo.UI.UIEvents.SetPrompt("", "Morate kupiti tacnu u Management Station-u!");
-                return; // Prekidamo dalje izvršavanje
+                // Provjera za shop
+                if (!Indigo.Shop.Upgrades.IsOwned(Indigo.Shop.UpgradeId.ServingTray))
+                {
+                    Indigo.UI.UIEvents.SetPrompt("", "Tacna je zaključana (Kupi u Shopu)");
+                }
+                else
+                {
+                    CupPickup heldCup = servingTrayScript.playerHand.GetComponentInChildren<CupPickup>();
+                    PortafilterPickup heldPortafilter = servingTrayScript.playerHand.GetComponentInChildren<PortafilterPickup>();
+
+                    if (heldCup != null && heldCup.isFilled)
+                    {
+                        Indigo.UI.UIEvents.SetPrompt("E", "Stavi kafu na tacnu");
+                    }
+                    else if (servingTrayScript.isPickedUp)
+                    {
+                        Indigo.UI.UIEvents.SetPrompt("E", "Vrati tacnu na sto");
+                    }
+                    else if (!servingTrayScript.isPickedUp && heldPortafilter == null && (heldCup == null || !heldCup.isFilled))
+                    {
+                        Indigo.UI.UIEvents.SetPrompt("E", "Uzmi tacnu");
+                    }
+                    else
+                    {
+                        Indigo.UI.UIEvents.SetPrompt("", ""); // Sakrij ako nema akcije
+                    }
+                }
             }
 
-            if (servingTrayScript != null)
+            // --- 2. LOGIKA ZA KLIK NA 'E' ---
+            if (Input.GetKeyDown(KeyCode.E))
             {
+                // Blokada ako nije kupljeno
+                if (!Indigo.Shop.Upgrades.IsOwned(Indigo.Shop.UpgradeId.ServingTray))
+                {
+                    return; 
+                }
+
                 servingTrayScript.InteractWithTray();
             }
         }

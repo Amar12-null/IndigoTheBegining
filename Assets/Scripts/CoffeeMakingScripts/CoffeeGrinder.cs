@@ -90,8 +90,8 @@ public class CoffeeGrinder : MonoBehaviour
                    (heldPortafilter.currentState == PortafilterPickup.PortafilterState.Empty || 
                     heldPortafilter.currentState == PortafilterPickup.PortafilterState.UsedCoffee))
                 {
-                    // Napomena: Mlin radi na držanje klika, pa pišemo tako
-                    Indigo.UI.UIEvents.SetPrompt("Drži Klik", "Samelji kafu");
+                    
+                    Indigo.UI.UIEvents.SetPrompt("M1", "Samelji kafu");
                 }
                 else
                 {
@@ -115,7 +115,7 @@ public class CoffeeGrinder : MonoBehaviour
             currentGrindTimer = 0f;
             if (_progressUI != null) _progressUI.UpdateProgress(0f);
             
-            // --- NOVO: Ako igrač pobjegne od mlina, takođe ugasi zvuk! ---
+            
             if (grinderAudio != null) grinderAudio.Stop();
         Indigo.UI.UIEvents.SetPrompt("", "");
         }

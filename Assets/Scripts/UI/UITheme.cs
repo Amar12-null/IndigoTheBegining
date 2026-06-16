@@ -15,11 +15,11 @@ namespace Indigo.UI
         public static readonly Color BackdropTop     = new Color(0.115f, 0.120f, 0.175f, 1f);
         public static readonly Color BackdropBottom  = new Color(0.045f, 0.048f, 0.075f, 1f);
 
-        // ── Accent (cool aqua-teal) ───────────────────────────────
-        public static readonly Color Accent          = new Color(0.34f, 0.78f, 0.84f, 1f);
-        public static readonly Color AccentHover     = new Color(0.50f, 0.89f, 0.93f, 1f);
-        public static readonly Color AccentPressed   = new Color(0.22f, 0.60f, 0.66f, 1f);
-        public static readonly Color AccentSoft      = new Color(0.34f, 0.78f, 0.84f, 0.18f);
+        // ── Accent (topla, cafe žuta) ─────────────────────────────
+        public static readonly Color Accent          = new Color(0.95f, 0.72f, 0.22f, 1f);
+        public static readonly Color AccentHover     = new Color(0.98f, 0.82f, 0.35f, 1f);
+        public static readonly Color AccentPressed   = new Color(0.85f, 0.60f, 0.15f, 1f);
+        public static readonly Color AccentSoft      = new Color(0.95f, 0.72f, 0.22f, 0.18f);
 
         // Warm gold — used for money / rewards so they read as valuable.
         public static readonly Color Gold            = new Color(0.98f, 0.78f, 0.40f, 1f);

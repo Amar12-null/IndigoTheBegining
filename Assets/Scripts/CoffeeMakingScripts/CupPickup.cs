@@ -16,20 +16,30 @@ public class CupPickup : MonoBehaviour
         if (saucer != null) saucer.SetActive(false);
     }
 
-    public void PickUp()
-    {
-        isPickedUp = true;
-        isOnMachine = false;
+   public void PickUp()
+{
+    Debug.Log("IsFilled status: " + isFilled);
+    isPickedUp = true;
+    isOnMachine = false;
 
-        handPoint.GetComponentInParent<ArmOverride>().isHoldingRight = true;
-        transform.SetParent(handPoint);
-        transform.localPosition = Vector3.zero;
-        transform.localRotation = Quaternion.identity;
-        
-        // Zvuk uzimanja šolje
-        if (Indigo.Audio.SoundManager.Instance != null)
-            Indigo.Audio.SoundManager.Instance.Play(Indigo.Audio.SfxId.Pickup);
+    // Osiguraj referencu na ruku prije pristupa
+    var arm = handPoint.GetComponentInParent<ArmOverride>();
+    if (arm != null) arm.isHoldingRight = true;
+
+    transform.SetParent(handPoint);
+    transform.localPosition = Vector3.zero;
+    transform.localRotation = Quaternion.identity;
+    
+    // RJEŠENJE: Ako je šoljica puna, tacna mora biti aktivna.
+    // Ako želiš da tacna bude uvijek tu kad je uzmeš, koristi: saucer.SetActive(true);
+    if (saucer != null) 
+    {
+        saucer.SetActive(isFilled); 
     }
+
+    if (Indigo.Audio.SoundManager.Instance != null)
+        Indigo.Audio.SoundManager.Instance.Play(Indigo.Audio.SfxId.Pickup);
+}
 
     public void PutOnMachine(Transform machineSlot)
     {
@@ -51,7 +61,7 @@ public class CupPickup : MonoBehaviour
         if (coffeeLiquid != null) coffeeLiquid.SetActive(true);
     }
 
-    public void PutOnTray(Transform traySlot)
+   public void PutOnTray(Transform traySlot)
     {
         isPickedUp = false;
         isOnMachine = false;
@@ -60,9 +70,10 @@ public class CupPickup : MonoBehaviour
         transform.localPosition = Vector3.zero;
         transform.localRotation = Quaternion.identity;
     
+        // OVDJE JE KLJUČ: Uvijek upali tacnu kada stavljaš na tacnu
         if (saucer != null) 
         {
-            saucer.SetActive(true);
+            saucer.SetActive(true); 
         }
 
         // Zvuk spuštanja na tacnu

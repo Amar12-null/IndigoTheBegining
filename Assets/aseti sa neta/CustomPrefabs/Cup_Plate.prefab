@@ -189,9 +189,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6737134043980794673}
-  - component: {fileID: 8004931660213083252}
   - component: {fileID: 5636093555771980115}
   - component: {fileID: -2396087665328011101}
+  - component: {fileID: -4543394284832771624}
   m_Layer: 0
   m_Name: Cup_Plate
   m_TagString: Untagged
@@ -217,24 +217,6 @@ Transform:
   - {fileID: 4099603239338533400}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &8004931660213083252
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1221898286459661926}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cc1b20c5b862c7c4faad40d5e76fb65f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CupPickup
-  handPoint: {fileID: 0}
-  coffeeLiquid: {fileID: 856856128941730409}
-  saucer: {fileID: 523657160105527890}
-  isPickedUp: 0
-  isOnMachine: 0
-  isFilled: 0
 --- !u!114 &5636093555771980115
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -270,6 +252,24 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 1
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &-4543394284832771624
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1221898286459661926}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc1b20c5b862c7c4faad40d5e76fb65f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CupPickup
+  handPoint: {fileID: 0}
+  coffeeLiquid: {fileID: 856856128941730409}
+  saucer: {fileID: 523657160105527890}
+  isPickedUp: 0
+  isOnMachine: 0
+  isFilled: 0
 --- !u!1 &3073193068848111884
 GameObject:
   m_ObjectHideFlags: 0

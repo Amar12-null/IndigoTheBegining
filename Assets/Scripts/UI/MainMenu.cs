@@ -9,7 +9,15 @@ namespace Indigo.UI
     {
         public string PlayScene = "KaficDesign";
         public string GameTitle = "INDIGO";
-        public string Subtitle  = "The Beginning";
+        
+        
+        [Header("Izgled Menija")]
+        public Sprite BackgroundImage;
+
+        // --- NOVO: Polje za muziku ---
+        [Header("Muzika")]
+        public AudioClip MenuMusic;
+        private AudioSource _musicSource;
 
         SettingsPanel _settings;
         CanvasGroup   _cg;
@@ -19,8 +27,29 @@ namespace Indigo.UI
             SettingsService.ApplyOnLoad();
             Cursor.visible   = true;
             Cursor.lockState = CursorLockMode.None;
+            
+            // --- NOVO: Paljenje muzike čim se meni upali ---
+            if (MenuMusic != null)
+            {
+                _musicSource = gameObject.AddComponent<AudioSource>();
+                _musicSource.clip = MenuMusic;
+                _musicSource.loop = true; // Pjesma se ponavlja beskonačno
+                _musicSource.playOnAwake = false;
+                _musicSource.volume = SettingsService.MusicVolume; // Čita tvoj klizač iz Settingsa
+                _musicSource.Play();
+            }
+
             BuildUI();
             StartCoroutine(UIAnimator.FadeScaleIn(_cg, (RectTransform)_cg.transform, 0.35f, 0.985f));
+        }
+
+        // --- NOVO: Ako uđeš u Settings i pomjeriš klizač za muziku, zvuk se odmah stišava/pojačava ---
+        void Update()
+        {
+            if (_musicSource != null)
+            {
+                _musicSource.volume = SettingsService.MusicVolume;
+            }
         }
 
         void BuildUI()
@@ -45,76 +74,91 @@ namespace Indigo.UI
 
             var root = (RectTransform)canvasGo.transform;
 
-            UIFactory.GradientBackdrop("Background", root, UITheme.BackdropTop, UITheme.BackdropBottom);
+            bool hasImage = BackgroundImage != null;
+
+            if (hasImage)
+            {
+                var bgGo = new GameObject("BackgroundImage", typeof(RectTransform), typeof(Image));
+                bgGo.transform.SetParent(root, false);
+                UIFactory.StretchToParent((RectTransform)bgGo.transform);
+                
+                var bgImg = bgGo.GetComponent<Image>();
+                bgImg.sprite = BackgroundImage;
+                bgImg.color = Color.white; 
+            }
+            else
+            {
+                UIFactory.GradientBackdrop("Background", root, UITheme.BackdropTop, UITheme.BackdropBottom);
+            }
+
             UIFactory.AddVignette(root, 0.55f);
 
-            var accentBar = UIFactory.Panel("AccentBar", root, UITheme.Accent, 4);
-            var abRt = (RectTransform)accentBar.transform;
-            abRt.anchorMin = new Vector2(0, 0.5f);
-            abRt.anchorMax = new Vector2(0, 0.5f);
-            abRt.pivot     = new Vector2(0, 0.5f);
-            abRt.sizeDelta = new Vector2(8, 220);
-            abRt.anchoredPosition = new Vector2(160, 80);
+            if (!hasImage)
+            {
+                var accentBar = UIFactory.Panel("AccentBar", root, UITheme.Accent, 4);
+                var abRt = (RectTransform)accentBar.transform;
+                abRt.anchorMin = new Vector2(0, 0.5f);
+                abRt.anchorMax = new Vector2(0, 0.5f);
+                abRt.pivot     = new Vector2(0, 0.5f);
+                abRt.sizeDelta = new Vector2(8, 220);
+                abRt.anchoredPosition = new Vector2(160, 80);
 
-            var title = UIFactory.Label("Title", root, GameTitle, UITheme.FontTitle, UITheme.TextPrimary, TextAnchor.MiddleLeft);
-            title.fontStyle = FontStyle.Bold;
-            UIFactory.GradientLabel(title, UITheme.TextPrimary, new Color(0.62f, 0.78f, 0.86f, 1f));
-            UIFactory.AddTextShadow(title, new Vector2(2f, -3f), new Color(0f, 0f, 0f, 0.55f));
-            var tRt = title.rectTransform;
-            tRt.anchorMin = new Vector2(0, 0.5f);
-            tRt.anchorMax = new Vector2(0, 0.5f);
-            tRt.pivot     = new Vector2(0, 0.5f);
-            tRt.sizeDelta = new Vector2(800, 80);
-            tRt.anchoredPosition = new Vector2(200, 150);
+                var title = UIFactory.Label("Title", root, GameTitle, UITheme.FontTitle, UITheme.TextPrimary, TextAnchor.MiddleLeft);
+                title.fontStyle = FontStyle.Bold;
+                UIFactory.GradientLabel(title, UITheme.TextPrimary, new Color(0.62f, 0.78f, 0.86f, 1f));
+                UIFactory.AddTextShadow(title, new Vector2(2f, -3f), new Color(0f, 0f, 0f, 0.55f));
+                var tRt = title.rectTransform;
+                tRt.anchorMin = new Vector2(0, 0.5f);
+                tRt.anchorMax = new Vector2(0, 0.5f);
+                tRt.pivot     = new Vector2(0, 0.5f);
+                tRt.sizeDelta = new Vector2(800, 80);
+                tRt.anchoredPosition = new Vector2(200, 150);
 
-            var underline = UIFactory.Panel("TitleUnderline", root, UITheme.Accent, 2);
-            var unRt = (RectTransform)underline.transform;
-            unRt.anchorMin = new Vector2(0, 0.5f);
-            unRt.anchorMax = new Vector2(0, 0.5f);
-            unRt.pivot     = new Vector2(0, 0.5f);
-            unRt.sizeDelta = new Vector2(240, 4);
-            unRt.anchoredPosition = new Vector2(200, 108);
-            var pulse = underline.AddComponent<UIPulse>();
-            pulse.scaleTarget = unRt;
-            pulse.pulseAlpha  = true;
-            pulse.minAlpha    = 0.55f;
-            pulse.maxAlpha    = 1f;
-            pulse.pulseScale  = true;
-            pulse.scaleX      = true;
-            pulse.scaleY      = false;
-            pulse.minScale    = 0.65f;
-            pulse.maxScale    = 1.0f;
-            pulse.speed       = 1.6f;
+                var underline = UIFactory.Panel("TitleUnderline", root, UITheme.Accent, 2);
+                var unRt = (RectTransform)underline.transform;
+                unRt.anchorMin = new Vector2(0, 0.5f);
+                unRt.anchorMax = new Vector2(0, 0.5f);
+                unRt.pivot     = new Vector2(0, 0.5f);
+                unRt.sizeDelta = new Vector2(240, 4);
+                unRt.anchoredPosition = new Vector2(200, 108);
 
-            var sub = UIFactory.Label("Subtitle", root, Subtitle, UITheme.FontHeader, UITheme.Accent, TextAnchor.MiddleLeft);
-            var sRt = sub.rectTransform;
-            sRt.anchorMin = new Vector2(0, 0.5f);
-            sRt.anchorMax = new Vector2(0, 0.5f);
-            sRt.pivot     = new Vector2(0, 0.5f);
-            sRt.sizeDelta = new Vector2(800, 40);
-            sRt.anchoredPosition = new Vector2(200, 70);
+                
+                
+               
+            }
 
             var buttons = new GameObject("Buttons", typeof(RectTransform));
             buttons.transform.SetParent(root, false);
             var bRt = (RectTransform)buttons.transform;
-            bRt.anchorMin = new Vector2(0, 0.5f);
-            bRt.anchorMax = new Vector2(0, 0.5f);
-            bRt.pivot     = new Vector2(0, 0.5f);
             bRt.sizeDelta = new Vector2(260, 240);
-            bRt.anchoredPosition = new Vector2(200, -80);
+
+            if (hasImage)
+            {
+                bRt.anchorMin = new Vector2(0.5f, 0f);
+                bRt.anchorMax = new Vector2(0.5f, 0f);
+                bRt.pivot     = new Vector2(0.5f, 0f);
+                bRt.anchoredPosition = new Vector2(0, 60); 
+            }
+            else
+            {
+                bRt.anchorMin = new Vector2(0, 0.5f);
+                bRt.anchorMax = new Vector2(0, 0.5f);
+                bRt.pivot     = new Vector2(0, 0.5f);
+                bRt.anchoredPosition = new Vector2(200, -80);
+            }
 
             var layout = buttons.AddComponent<VerticalLayoutGroup>();
             layout.spacing  = 12;
             layout.padding  = new RectOffset(0, 0, 0, 0);
-            layout.childAlignment        = TextAnchor.UpperLeft;
+            layout.childAlignment        = hasImage ? TextAnchor.UpperCenter : TextAnchor.UpperLeft;
             layout.childControlWidth     = true;
             layout.childControlHeight    = false;
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
 
-            AddMenuButton(buttons.transform, "Play",     OnPlay);
-            AddMenuButton(buttons.transform, "Settings", OnSettings);
-            AddMenuButton(buttons.transform, "Quit",     OnQuit);
+            AddMenuButton(buttons.transform, "Play",     OnPlay, hasImage);
+            AddMenuButton(buttons.transform, "Settings", OnSettings, hasImage);
+            AddMenuButton(buttons.transform, "Quit",     OnQuit, hasImage);
 
             var hint = UIFactory.Label("Hint", root, "v0.1  •  built with Unity 6", UITheme.FontSmall, UITheme.TextSecondary, TextAnchor.LowerRight);
             var hRt = hint.rectTransform;
@@ -130,10 +174,9 @@ namespace Indigo.UI
 
             _settings = gameObject.AddComponent<SettingsPanel>();
             _settings.Build((RectTransform)settingsLayer.transform, onBack: () => { });
-            
         }
 
-        void AddMenuButton(Transform parent, string label, UnityEngine.Events.UnityAction onClick)
+        void AddMenuButton(Transform parent, string label, UnityEngine.Events.UnityAction onClick, bool centered)
         {
             var btn = UIFactory.TextButton(label + "Button", parent, label, new Vector2(260, 56));
             var le  = btn.gameObject.AddComponent<LayoutElement>();
@@ -141,22 +184,33 @@ namespace Indigo.UI
             le.minHeight       = 56;
 
             var lbl = btn.GetComponentInChildren<Text>();
-            if (lbl != null) lbl.alignment = TextAnchor.MiddleLeft;
+            if (lbl != null) 
+            {
+                lbl.alignment = centered ? TextAnchor.MiddleCenter : TextAnchor.MiddleLeft;
+            }
+            
             var lblRt = lbl.rectTransform;
-            lblRt.offsetMin = new Vector2(24, 0);
-            lblRt.offsetMax = new Vector2(-16, 0);
+            if (centered)
+            {
+                lblRt.offsetMin = Vector2.zero;
+                lblRt.offsetMax = Vector2.zero;
+            }
+            else
+            {
+                lblRt.offsetMin = new Vector2(24, 0);
+                lblRt.offsetMax = new Vector2(-16, 0);
+            }
 
             btn.onClick.AddListener(onClick);
         }
 
         void OnPlay()
-    {
-        // Vraćeno na original: Učitavamo scenu koju si upisao u Inspector!
-        if (Application.CanStreamedLevelBeLoaded(PlayScene))
-        SceneManager.LoadScene(PlayScene);
-        else
-        Debug.LogWarning($"MainMenu: scene '{PlayScene}' is not in Build Settings.");
-    }
+        {
+            if (Application.CanStreamedLevelBeLoaded(PlayScene))
+                SceneManager.LoadScene(PlayScene);
+            else
+                Debug.LogWarning($"MainMenu: scene '{PlayScene}' is not in Build Settings.");
+        }
 
         void OnSettings() { _settings?.Open(); }
 

@@ -5,7 +5,8 @@ using Indigo.Integration; // Pristup DrinkSelectorStation
 
 public class CoffeeMachineSlot : MonoBehaviour
 {
-    
+    [Header("UI Integracija")]
+    public Indigo.Integration.DrinkSelectorStation drinkSelector;
     [Header("Portafilter Postavke")]
     public PortafilterPickup portafilter; 
     public Transform portafilterSlot;     
@@ -221,7 +222,10 @@ public class CoffeeMachineSlot : MonoBehaviour
         {
             if (HasUnfilledCup())
             {
-                Indigo.UI.UIEvents.SetPrompt("Lijevi Klik", "Pravi kafu (Prije toga 1-4 za vrstu)");
+                // NOVO: Čitamo šta je izabrano iz one druge skripte i ispisujemo to na ekran!
+                string izabranaKafa = (drinkSelector != null) ? drinkSelector.Selected.ToString() : "Kafu";
+                
+                Indigo.UI.UIEvents.SetPrompt("M1", $"Pravi: {izabranaKafa} (1-4 za promjenu)");
             }
             else
             {

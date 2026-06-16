@@ -10,7 +10,7 @@ namespace Indigo.Shop
 
         void Start()
         {
-            // POPRAVLJENO: Umjesto FindFirstObjectByType koristimo FindAnyObjectByType za Unity 6!
+            // Koristimo FindAnyObjectByType za Unity 6
             _shopPanel = FindAnyObjectByType<ShopPanel>();
         }
 
@@ -21,30 +21,35 @@ namespace Indigo.Shop
                 if (Input.GetKeyDown(_shopPanel.toggleKey))
                 {
                     _shopPanel.Toggle();
+                    
+                    // Opciono: Gasimo UI tekst kad se shop otvori (da ne smeta iza panela)
+                    // Ako se shop otvori, gasi tekst. Ako se zatvori, ponovo ga pali.
+                    if (_shopPanel.gameObject.activeInHierarchy)
+                    {
+                        Indigo.UI.UIEvents.SetPrompt("", "");
+                    }
+                    else
+                    {
+                        Indigo.UI.UIEvents.SetPrompt(_shopPanel.toggleKey.ToString(), "Open Shop");
+                    }
                 }
             }
         }
 
-        void OnGUI()
-        {
-            if (_isPlayerNear && _shopPanel != null)
-            {
-                var stil = new GUIStyle(GUI.skin.label);
-                stil.alignment = TextAnchor.MiddleCenter;
-                stil.fontSize = 22;
-                stil.fontStyle = FontStyle.Bold;
-                stil.normal.textColor = Color.green;
-                
-                GUI.Box(new Rect(Screen.width / 2 - 175, Screen.height - 120, 350, 45), 
-                    $"[STATION] Press [{_shopPanel.toggleKey}] to Open Shop", GUI.skin.box);
-            }
-        }
+        // Obrisali smo OnGUI() potpuno!
 
         private void OnTriggerEnter(Collider other)
         {
             if (other.CompareTag("Player") || other.GetComponent<CharacterController>() != null)
             {
                 _isPlayerNear = true;
+                
+                // --- NOVO: Pozivamo moderni prompt sistem ---
+                if (_shopPanel != null)
+                {
+                    Indigo.UI.UIEvents.SetPrompt(_shopPanel.toggleKey.ToString(), "Open Shop");
+                }
+                
                 Debug.Log("ShopTrigger: Igrač je ušao u zonu kase!");
             }
         }
@@ -54,6 +59,10 @@ namespace Indigo.Shop
             if (other.CompareTag("Player") || other.GetComponent<CharacterController>() != null)
             {
                 _isPlayerNear = false;
+                
+                // --- NOVO: Čistimo prompt sistem kada igrač ode ---
+                Indigo.UI.UIEvents.SetPrompt("", "");
+                
                 Debug.Log("ShopTrigger: Igrač je izašao iz zone kase!");
                 if (_shopPanel != null) _shopPanel.Close();
             }

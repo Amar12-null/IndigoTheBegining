@@ -2,28 +2,37 @@ using UnityEngine;
 
 public class TrashCan : MonoBehaviour
 {
-    public Transform playerHand; // Referenca na ruku igrača da provjerimo šta drži
+    public Transform playerHand; 
 
     private bool playerNear = false;
 
     void Update()
     {
-        // Ako si blizu i pritisneš E
-        if (playerNear && Input.GetKeyDown(KeyCode.Q))
+        if (playerNear)
         {
-            // Tražimo da li igrač trenutno ima šoljicu u ruci
             CupPickup heldCup = playerHand.GetComponentInChildren<CupPickup>();
 
-            // Ako ima šoljicu (bilo punu ili praznu), bacamo je!
-            if (heldCup != null)
+            // --- UI TUTORIJAL ---
+            if (Indigo.Settings.TutorialSettings.ShowTutorial)
             {
-                Destroy(heldCup.gameObject); // Unity funkcija koja briše objekat iz igre
-                playerHand.GetComponentInParent<ArmOverride>().isHoldingRight = false; 
-                Debug.Log("Šolja je bačena u smeće!");
+                if (heldCup != null)
+                    Indigo.UI.UIEvents.SetPrompt("Q", "Baci u smeće");
+                else
+                    Indigo.UI.UIEvents.SetPrompt("", "");
             }
-            else
+
+            // --- LOGIKA BACANJA ---
+            if (Input.GetKeyDown(KeyCode.Q) && heldCup != null)
             {
-                Debug.Log("Nemaš šolju u ruci za baciti!");
+                // Zvuk bacanja u smeće (koristimo Drop zvuk)
+                if (Indigo.Audio.SoundManager.Instance != null)
+                    Indigo.Audio.SoundManager.Instance.Play(Indigo.Audio.SfxId.Drop);
+
+                Destroy(heldCup.gameObject); 
+                playerHand.GetComponentInParent<ArmOverride>().isHoldingRight = false; 
+                
+                Indigo.UI.UIEvents.SetPrompt("", ""); // Odmah gasi UI
+                Debug.Log("Šolja je bačena u smeće!");
             }
         }
     }
@@ -35,6 +44,11 @@ public class TrashCan : MonoBehaviour
 
     private void OnTriggerExit(Collider other)
     {
-        if (other.CompareTag("Player")) playerNear = false;
+        if (other.CompareTag("Player")) 
+        {
+            playerNear = false;
+            // Čistimo ekran kad se odmaknemo
+            Indigo.UI.UIEvents.SetPrompt("", ""); 
+        }
     }
 }

@@ -18,17 +18,13 @@ namespace Indigo.DevTools
         public KeyCode interactKey = KeyCode.E;
 
         private bool _playerNear = false;
-        private bool _promptShown = false;
+       
 
         void Update()
         {
             if (!_playerNear) return;
 
-            if (!_promptShown)
-            {
-                UIEvents.SetPrompt("E", "ACTIVATE MAX LEVEL & FUNDS");
-                _promptShown = true;
-            }
+            
 
             if (Input.GetKeyDown(interactKey))
             {
@@ -40,7 +36,7 @@ namespace Indigo.DevTools
                 
                 Debug.Log($"[DEV CHEAT]: Max nivo aktiviran! Dodijeljeno ${cheatAmount} i {cheatXPAmount} XP.");
                 
-                UIEvents.SetPrompt("E", "MAX LEVEL ACTIVATED!");
+                
             }
         }
 
@@ -49,7 +45,7 @@ namespace Indigo.DevTools
             if (other.CompareTag("Player"))
             {
                 _playerNear = true;
-                _promptShown = false;
+                
             }
         }
 
@@ -58,21 +54,10 @@ namespace Indigo.DevTools
             if (other.CompareTag("Player"))
             {
                 _playerNear = false;
-                if (_promptShown)
-                {
-                    UIEvents.ClearPrompt();
-                    _promptShown = false;
-                }
+                
             }
         }
 
-        void OnDisable()
-        {
-            if (_promptShown)
-            {
-                UIEvents.ClearPrompt();
-                _promptShown = false;
-            }
-        }
+        
     }
 }

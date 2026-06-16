@@ -91,8 +91,8 @@ namespace Indigo.Game
 
             if (dm.Phase == DayManager.DayPhase.PreDay)
             {
-                int seconds = Mathf.CeilToInt(Mathf.Max(0f, dm.PreDayCountdown));
-                if (_timeLabel != null) _timeLabel.text = "Starts in " + seconds + "s";
+                // --- NOVO: Ažuriran tekst uputstva ---
+                if (_timeLabel != null) _timeLabel.text = "Press 'S' to start!";
                 if (_timeFillRt != null) _timeFillRt.sizeDelta = new Vector2(_trackWidth, 0f);
                 if (_timeFill != null) _timeFill.color = UITheme.Accent;
                 return;

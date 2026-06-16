@@ -39,6 +39,8 @@ namespace Indigo.UI
             _promptPanel.anchorMax = new Vector2(0.5f, 0f);
             _promptPanel.pivot     = new Vector2(0.5f, 0f);
             _promptPanel.anchoredPosition = new Vector2(0, 120);
+            
+            // Početna veličina više nije fiksna, ovo je samo okvirno
             _promptPanel.sizeDelta = new Vector2(360, 56);
 
             var layout = go.AddComponent<HorizontalLayoutGroup>();
@@ -46,7 +48,10 @@ namespace Indigo.UI
             layout.spacing = 12;
             layout.childAlignment = TextAnchor.MiddleCenter;
             layout.childControlHeight = true;
-            layout.childControlWidth  = false;
+            
+            // --- OVO JE POPRAVLJENO! Sada pozadina sluša širinu teksta! ---
+            layout.childControlWidth  = true; 
+            
             layout.childForceExpandHeight = false;
             layout.childForceExpandWidth  = false;
 

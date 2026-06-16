@@ -23,15 +23,9 @@ namespace Indigo.Audio
     {
         public static SoundManager Instance { get; private set; }
 
-        [Header("Mix")]
-        [Range(0f, 1f)] public float masterVolume = 1f;
-        [Range(0f, 1f)] public float sfxVolume = 1f;
-        [Range(0f, 1f)] public float musicVolume = 0.5f;
-
         [Header("SFX library")]
         public SfxEntry[] sfx;
 
-        // --- NOVO: PLEJLISTA ZA POZADINSKU MUZIKU ---
         [Header("Music Playlist")]
         [Tooltip("Ubaci svojih 6 audio fajlova ovdje!")]
         public AudioClip[] ambientMusicPlaylist; 
@@ -53,11 +47,19 @@ namespace Indigo.Audio
             BuildPool();
             BuildMusicSource();
             
-            // --- NOVO: BIRA NASUMIČNU PJESMU IZ TVOJE PLEJLISTE ---
             if (ambientMusicPlaylist != null && ambientMusicPlaylist.Length > 0)
             {
                 AudioClip randomSong = ambientMusicPlaylist[Random.Range(0, ambientMusicPlaylist.Length)];
                 PlayMusic(randomSong);
+            }
+        }
+
+        void Update()
+        {
+            // --- NOVO: Muzika uživo prati klizač iz Settingsa! ---
+            if (_musicSource != null)
+            {
+                _musicSource.volume = Indigo.UI.SettingsService.MusicVolume;
             }
         }
 
@@ -97,7 +99,7 @@ namespace Indigo.Audio
             go.transform.SetParent(transform, false);
             _musicSource = go.AddComponent<AudioSource>();
             _musicSource.playOnAwake = false;
-            _musicSource.loop = loopMusic; // Muzika će se ponavljati zahvaljujući ovoj liniji
+            _musicSource.loop = loopMusic; 
             _musicSource.spatialBlend = 0f;
         }
 
@@ -110,7 +112,8 @@ namespace Indigo.Audio
             _nextSource = (_nextSource + 1) % _sfxPool.Count;
 
             src.clip = entry.clip;
-            src.volume = entry.volume * sfxVolume * masterVolume;
+            // --- NOVO: SFX koristi podešavanja iz SettingsService-a ---
+            src.volume = entry.volume * Indigo.UI.SettingsService.SFXVolume;
             src.pitch = Random.Range(entry.pitchMin, entry.pitchMax);
             src.Play();
         }
@@ -119,14 +122,16 @@ namespace Indigo.Audio
         {
             if (_byId == null || !_byId.TryGetValue(id, out var entry)) return;
             if (entry.clip == null) return;
-            AudioSource.PlayClipAtPoint(entry.clip, worldPos, entry.volume * sfxVolume * masterVolume);
+            
+            // --- NOVO: SFX koristi podešavanja iz SettingsService-a ---
+            AudioSource.PlayClipAtPoint(entry.clip, worldPos, entry.volume * Indigo.UI.SettingsService.SFXVolume);
         }
 
         public void PlayMusic(AudioClip clip)
         {
             if (_musicSource == null || clip == null) return;
             _musicSource.clip = clip;
-            _musicSource.volume = musicVolume * masterVolume;
+            _musicSource.volume = Indigo.UI.SettingsService.MusicVolume;
             _musicSource.Play();
         }
 
@@ -134,9 +139,5 @@ namespace Indigo.Audio
         {
             if (_musicSource != null) _musicSource.Stop();
         }
-
-        public void SetMusicVolume(float v) { musicVolume = Mathf.Clamp01(v); if (_musicSource != null) _musicSource.volume = musicVolume * masterVolume; }
-        public void SetSfxVolume(float v)   { sfxVolume = Mathf.Clamp01(v); }
-        public void SetMasterVolume(float v){ masterVolume = Mathf.Clamp01(v); if (_musicSource != null) _musicSource.volume = musicVolume * masterVolume; }
     }
 }

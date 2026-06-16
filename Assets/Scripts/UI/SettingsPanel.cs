@@ -39,7 +39,10 @@ namespace Indigo.UI
             _cardRt.anchorMin = new Vector2(0.5f, 0.5f);
             _cardRt.anchorMax = new Vector2(0.5f, 0.5f);
             _cardRt.pivot     = new Vector2(0.5f, 0.5f);
-            _cardRt.sizeDelta = new Vector2(520, 460);
+            
+            // POPRAVLJENO: Panel je sada visok 670 da stane kompletna kontrola zvuka
+            _cardRt.sizeDelta = new Vector2(520, 670);
+            
             UIFactory.AddDropShadow(_cardRt, new Vector2(0, -8), 0.45f, 24, 18f);
             UIFactory.AddStroke(_cardRt, UITheme.Stroke, 1.5f, 20);
 
@@ -60,14 +63,24 @@ namespace Indigo.UI
             aRt.anchoredPosition = new Vector2(32, -76);
             aRt.sizeDelta = new Vector2(48, 3);
 
+            // --- REDOSLIJED SVIH OPCIJA ---
             AddSliderRow(card.transform, "Master Volume", -110, 0f, 1f, SettingsService.MasterVolume,
                 v => SettingsService.MasterVolume = v, v => Mathf.RoundToInt(v * 100f) + "%");
 
-            AddSliderRow(card.transform, "Mouse Sensitivity", -180, 0.5f, 8f, SettingsService.MouseSensitivity,
+            AddSliderRow(card.transform, "Music Volume", -180, 0f, 1f, SettingsService.MusicVolume,
+                v => SettingsService.MusicVolume = v, v => Mathf.RoundToInt(v * 100f) + "%");
+
+            AddSliderRow(card.transform, "SFX Volume", -250, 0f, 1f, SettingsService.SFXVolume,
+                v => SettingsService.SFXVolume = v, v => Mathf.RoundToInt(v * 100f) + "%");
+
+            AddSliderRow(card.transform, "Mouse Sensitivity", -320, 0.5f, 8f, SettingsService.MouseSensitivity,
                 v => SettingsService.MouseSensitivity = v, v => v.ToString("0.0"));
 
-            AddToggleRow(card.transform, "Fullscreen", -250, SettingsService.Fullscreen,
+            AddToggleRow(card.transform, "Fullscreen", -390, SettingsService.Fullscreen,
                 v => SettingsService.Fullscreen = v);
+
+            AddToggleRow(card.transform, "Show Tutorial", -460, SettingsService.ShowTutorial,
+                v => SettingsService.ShowTutorial = v);
 
             var back = UIFactory.TextButton("BackButton", card.transform, "Back", new Vector2(160, 48));
             var backRt = back.GetComponent<RectTransform>();

@@ -1,6 +1,7 @@
 using UnityEngine;
 using Indigo.UI;
-using Indigo.Integration; // NOVO: Dodajemo namespace da skripta vidi CupOrderBridge!
+using Indigo.Integration; 
+
 
 namespace Indigo.Customers
 {
@@ -39,12 +40,55 @@ namespace Indigo.Customers
             {
                 if (requireHeldDrink)
                 {
-                    var held = UIEvents.CurrentHeldName;
-                    if (!string.IsNullOrEmpty(held))
+                    
+                    CupPickup rightHandCup = null;
+                    CupPickup trayCup = null;
+
+                    var machine = FindAnyObjectByType<CoffeeMachineSlot>();
+                    if (machine != null && machine.playerHand != null)
+                    {
+                        rightHandCup = machine.playerHand.GetComponentInChildren<CupPickup>();
+                    }
+
+                    var tray = FindAnyObjectByType<ServingTray>();
+                    if (tray != null && tray.isPickedUp)
+                    {
+                        // Skeniramo tacnu da vidimo ima li kafa koja odgovara gostu!
+                        foreach (Transform slot in tray.traySlots)
+                        {
+                            if (slot.childCount > 0)
+                            {
+                                CupPickup cup = slot.GetComponentInChildren<CupPickup>();
+                                CupOrderBridge bridge = cup?.GetComponent<CupOrderBridge>();
+                                
+                                if (bridge != null && bridge.drinkType == _customer.Order && cup.isFilled)
+                                {
+                                    trayCup = cup;
+                                    break; 
+                                }
+                            }
+                        }
+                    }
+
+                    // Provjeravamo da li desna ruka drži pravu kafu
+                    bool rightHandCorrect = false;
+                    if (rightHandCup != null && rightHandCup.isFilled)
+                    {
+                        var bridge = rightHandCup.GetComponent<CupOrderBridge>();
+                        if (bridge != null && bridge.drinkType == _customer.Order) rightHandCorrect = true;
+                    }
+
+                    // --- LOGIKA ZA PRIKAZ I DOSTAVU ---
+                    if (rightHandCorrect)
                     {
                         ShowPrompt("E", "Deliver " + _customer.Order.DisplayName());
-                        if (Input.GetKeyDown(interactKey))
-                            TryDeliverHeld(held);
+                        if (Input.GetKeyDown(interactKey)) TryDeliverSpecificCup(rightHandCup, true);
+                    }
+                    else if (trayCup != null)
+                    {
+                        // NOVO: Prepoznaje kafu na tacni i nudi direktnu dostavu!
+                        ShowPrompt("E", "Deliver " + _customer.Order.DisplayName() );
+                        if (Input.GetKeyDown(interactKey)) TryDeliverSpecificCup(trayCup, false);
                     }
                     else
                     {
@@ -64,45 +108,28 @@ namespace Indigo.Customers
             }
         }
 
-        void TryDeliverHeld(string heldName)
+        
+        void TryDeliverSpecificCup(CupPickup cup, bool wasInRightHand)
         {
-            if (!TryParseOrder(heldName, out var t)) return;
-            
-            // Prosljeđujemo stvarni tip kafe gostu
-            if (_customer.TryDeliver(t))
+            if (_customer.TryDeliver(_customer.Order))
             {
-                DestroyHeldCup();
-                UIEvents.ClearHeldItem();
-            }
-        }
+                Destroy(cup.gameObject); // Brišemo specifičnu šolju (bila ona u ruci ili na tacni)
 
-        // --- POPRAVLJENO SIGURNO UNIŠTAVANJE ŠOLJICE IZ RUKE ---
-        void DestroyHeldCup()
-        {
-            // Pronalazimo aparat za kafu na sceni kako bismo preko njega uzeli tačnu referencu na playerHand
-            var machine = GameObject.FindAnyObjectByType<CoffeeMachineSlot>();
-            if (machine != null && machine.playerHand != null)
-            {
-                // Tražimo šoljicu koja se nalazi direktno unutar igračevih ruku
-                CupPickup heldCup = machine.playerHand.GetComponentInChildren<CupPickup>();
-                if (heldCup != null)
+                if (wasInRightHand)
                 {
-                    Destroy(heldCup.gameObject); // Uništavamo šoljicu iz ruke!
-                    
-                    // Oslobađamo desnu ruku u ArmOverride sistemu animacija
-                    ArmOverride arm = machine.playerHand.GetComponentInParent<ArmOverride>();
-                    if (arm != null) arm.isHoldingRight = false;
-                    
-                    Debug.Log("CustomerInteraction: Šoljica uništena i ruka je spuštena.");
+                    var machine = FindAnyObjectByType<CoffeeMachineSlot>();
+                    if (machine != null && machine.playerHand != null)
+                    {
+                        ArmOverride arm = machine.playerHand.GetComponentInParent<ArmOverride>();
+                        if (arm != null) arm.isHoldingRight = false;
+                    }
+                    UIEvents.ClearHeldItem();
                 }
+                
+                // Opcionalno zvučni efekat predaje kafe (koristimo "Place" zvuk)
+                if (Indigo.Audio.SoundManager.Instance != null)
+                    Indigo.Audio.SoundManager.Instance.Play(Indigo.Audio.SfxId.Place);
             }
-        }
-
-        static bool TryParseOrder(string heldName, out OrderType t)
-        {
-            t = default;
-            if (string.IsNullOrEmpty(heldName)) return false;
-            return System.Enum.TryParse(heldName, true, out t);
         }
 
         void OnTriggerEnter(Collider other)

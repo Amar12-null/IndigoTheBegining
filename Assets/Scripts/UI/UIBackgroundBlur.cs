@@ -50,7 +50,7 @@ namespace Indigo.UI
             if (_rt == null || _rt.width != w || _rt.height != h)
             {
                 if (_rt != null) _rt.Release();
-                _rt = new RenderTexture(w, h, 0) { filterMode = FilterMode.Bilinear };
+                _rt = new RenderTexture(w, h, 24) { filterMode = FilterMode.Bilinear };
             }
 
             // 1) Snapshot the live scene into the base RT. Scriptable Render

@@ -11,20 +11,10 @@ namespace Indigo.Game
         public static DayManager Instance { get; private set; }
 
         [Header("Day timing")]
-        [Tooltip("Trajanje jednog radnog dana u sekundama.")]
         public float dayDuration = 180f;
 
-        [Tooltip("Sekundi prije nego što dan 1 automatski počne (npr. da igrač dobije par sekundi).")]
-        public float startDelay = 2f;
-
-        [Tooltip("Automatski počinje sljedeći dan kad igrač zatvori summary.")]
-        public bool autoStartFirstDay = true;
-
         [Header("Difficulty scaling")]
-        [Tooltip("Bazna stopa spawnanja se dijeli sa ovim svakim danom (faster spawning).")]
         public float spawnRateGrowth = 1.15f;
-
-        [Tooltip("Bazna patience za narudžbe se množi sa ovim svakim danom (manje strpljenja).")]
         public float patienceShrink = 0.92f;
 
         [Header("Spawner reference (optional)")]
@@ -43,8 +33,6 @@ namespace Indigo.Game
         public event Action<DaySummary> OnDayEnded;
         public event Action<DayPhase> OnPhaseChanged;
 
-        private float _startCountdown;
-
         void Awake()
         {
             if (Instance != null && Instance != this) { Destroy(gameObject); return; }
@@ -57,22 +45,18 @@ namespace Indigo.Game
             if (Instance == this) Instance = null;
         }
 
-        void Start()
-        {
-            if (autoStartFirstDay) _startCountdown = startDelay;
-        }
-
-        public float PreDayCountdown => _startCountdown;
-
         void Update()
         {
             if (Indigo.UI.UIEvents.IsPaused) return;
 
-            if (Phase == DayPhase.PreDay && _startCountdown > 0f)
+            // --- NOVO: Ako je dan u pripremi, slušamo pritisak na tipku 'S' ---
+            if (Phase == DayPhase.PreDay)
             {
-                _startCountdown -= Time.deltaTime;
-                if (_startCountdown <= 0f) StartNextDay();
-                return;
+                if (Input.GetKeyDown(KeyCode.S))
+                {
+                    StartNextDay();
+                }
+                return; // Ne idemo dalje dok dan ne počne
             }
 
             if (Phase != DayPhase.Active) return;
@@ -89,8 +73,7 @@ namespace Indigo.Game
             DayLost = MoneyManager.CustomersLost;
             DayEarnedAtStart = MoneyManager.TotalEarned;
 
-            // --- POPRAVLJEN UNITY 6 KOD ZA ČIŠĆENJE NPC-EVA ---
-            Customer[] sviGosti = GameObject.FindObjectsByType<Customer>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            Customer[] sviGosti = GameObject.FindObjectsByType<Customer>(FindObjectsInactive.Exclude);
             foreach (var gost in sviGosti)
             {
                 if (gost != null) Destroy(gost.gameObject);
@@ -98,19 +81,15 @@ namespace Indigo.Game
 
             if (TableManager.Instance != null)
             {
-                // Popravljen Unity 6 kod za stolove
-                Table[] sviStolovi = GameObject.FindObjectsByType<Table>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+                Table[] sviStolovi = GameObject.FindObjectsByType<Table>(FindObjectsInactive.Exclude);
                 foreach (var sto in sviStolovi)
                 {
-                    if (sto != null) sto.Release(null); // Prisilno oslobađanje stola
+                    if (sto != null) sto.Release(null); 
                 }
                 TableManager.Instance.RefreshTables();
             }
 
-            // Čistimo i UI tikete narudžbi koji su možda ostali visiti
             OrderRegistry.Clear();
-            // --------------------------------------------------
-
             ApplyDifficulty(CurrentDay);
 
             SetPhase(DayPhase.Active);
@@ -156,7 +135,7 @@ namespace Indigo.Game
             return "D";
         }
 
-        void SetPhase(DayPhase p)
+        public void SetPhase(DayPhase p)
         {
             if (Phase == p) return;
             Phase = p;

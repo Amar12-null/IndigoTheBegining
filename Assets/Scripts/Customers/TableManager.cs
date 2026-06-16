@@ -24,7 +24,7 @@ namespace Indigo.Customers
         public void RefreshTables()
         {
             _tables.Clear();
-            _tables.AddRange(FindObjectsByType<Table>(FindObjectsInactive.Exclude, FindObjectsSortMode.None));
+            _tables.AddRange(FindObjectsByType<Table>(FindObjectsInactive.Exclude));
         }
 
         public Table FindFreeTable()
