@@ -30,7 +30,7 @@ public class CupPickup : MonoBehaviour
     transform.localPosition = Vector3.zero;
     transform.localRotation = Quaternion.identity;
     
-    // RJEŠENJE: Ako je šoljica puna, tacna mora biti aktivna.
+    
     // Ako želiš da tacna bude uvijek tu kad je uzmeš, koristi: saucer.SetActive(true);
     if (saucer != null) 
     {

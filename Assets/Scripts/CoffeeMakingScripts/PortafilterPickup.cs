@@ -38,7 +38,7 @@ public class PortafilterPickup : MonoBehaviour
         if (coffeeVisual != null) coffeeVisual.SetActive(true); // PALIMO vizual
     }
 
-    // NOVO: Zamjena za ReturnToHome. Ovo ćemo pozivati kada praznimo staru kafu!
+    
     public void EmptyCoffee()
     {
         currentState = PortafilterState.Empty;

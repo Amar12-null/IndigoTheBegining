@@ -17,14 +17,14 @@ public class CoffeeMachineSlot : MonoBehaviour
     [Header("Player & UI Postavke")]
     public Transform playerHand;         
     public float brewTime = 3f;          
-    public Vector3 uiLocalOffset = new Vector3(0f, 1.2f, 0f); // Pozicija trake iznad aparata
+    public Vector3 uiLocalOffset = new Vector3(0f, 1.2f, 0f); 
     
     [Header("Audio")]
     public AudioSource machineAudio;
     
     private float currentBrewTimer = 0f;
     private bool playerNear = false;
-    private bool _isBrewing = false; // NOVO: Prati da li aparat sam kuva
+    private bool _isBrewing = false; 
     private MachineProgressWorldUI _progressUI; 
 
     void Start()
@@ -111,7 +111,7 @@ public class CoffeeMachineSlot : MonoBehaviour
             }
         }
 
-        // 2. LOGIKA OKIDANJA KUVANJA (Samo jedan klik mišem, ne držanje!)
+       
         // 2. LOGIKA OKIDANJA KUVANJA (Samo jedan klik mišem, ne držanje!)
         if (playerNear && portafilter != null && portafilter.currentState == PortafilterPickup.PortafilterState.GroundCoffee && HasUnfilledCup())
         {
@@ -120,7 +120,7 @@ public class CoffeeMachineSlot : MonoBehaviour
                 _isBrewing = true;
                 currentBrewTimer = 0f;
 
-                // --- NOVO: PALJENJE ZVUKA I PITCH-a ---
+                // PALJENJE ZVUKA I PITCH-a ---
                 if (machineAudio != null) 
                 {
                     // Ako imamo brže kuvanje, ubrzaj i zvuk duplo!
@@ -142,7 +142,7 @@ public class CoffeeMachineSlot : MonoBehaviour
         {
             currentBrewTimer += Time.deltaTime;
             
-            // --- NOVO: PROVJERA ZA BRŽE KUVANJE ---
+           
             // Ako ima upgrade FastBrew, vrijeme kuvanja je duplo brže (brewTime * 0.5f)
             float actualBrewTime = Indigo.Shop.Upgrades.IsOwned(Indigo.Shop.UpgradeId.FastBrew) ? brewTime * 0.5f : brewTime;
             
@@ -160,7 +160,7 @@ public class CoffeeMachineSlot : MonoBehaviour
 
                 _isBrewing = false; 
                 
-                // OBRISALI SMO LINIJU ZA STOPIRANJE!
+                
                 // Sada će zvučnik prirodno odsvirati tvoj "ding" na kraju i sam se ugasiti.
                 
                 Debug.Log("Aparat završio! Kafa skuvana!");
@@ -222,7 +222,7 @@ public class CoffeeMachineSlot : MonoBehaviour
         {
             if (HasUnfilledCup())
             {
-                // NOVO: Čitamo šta je izabrano iz one druge skripte i ispisujemo to na ekran!
+                // Čitamo šta je izabrano iz one druge skripte i ispisujemo to na ekran!
                 string izabranaKafa = (drinkSelector != null) ? drinkSelector.Selected.ToString() : "Kafu";
                 
                 Indigo.UI.UIEvents.SetPrompt("M1", $"Pravi: {izabranaKafa} (1-4 za promjenu)");
@@ -285,7 +285,7 @@ public class CoffeeMachineSlot : MonoBehaviour
                     cup.isFilled = true;
                     if (cup.coffeeLiquid != null) cup.coffeeLiquid.SetActive(true); 
 
-                    // --- NOVO: AUTOMATSKO PROSLJEĐIVANJE TIPA KAFE ---
+                    // AUTOMATSKO PROSLJEĐIVANJE TIPA KAFE ---
                     // Ako portafilter ima definisan tip kafe, prepisujemo ga direktno u šolju
                     var bridge = cup.GetComponent<CupOrderBridge>();
                     if (bridge != null && portafilter != null)

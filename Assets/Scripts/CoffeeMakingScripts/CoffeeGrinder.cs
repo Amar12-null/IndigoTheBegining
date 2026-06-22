@@ -9,7 +9,7 @@ public class CoffeeGrinder : MonoBehaviour
     public float timeToGrind = 1.5f; 
     public Vector3 uiLocalOffset = new Vector3(0f, 1.0f, 0f); 
     
-    // --- NOVO: Referenca za zvučnik mlina ---
+  
     [Header("Audio")]
     public AudioSource grinderAudio;
     
@@ -34,7 +34,7 @@ public class CoffeeGrinder : MonoBehaviour
             {
                 if (Input.GetMouseButton(0)) 
                 {
-                    // --- NOVO: Palimo zvuk samo u prvom frejmu klika ---
+                   
                     if (Input.GetMouseButtonDown(0))
                     {
                         if (grinderAudio != null) 
@@ -61,7 +61,7 @@ public class CoffeeGrinder : MonoBehaviour
                         currentGrindTimer = 0f;
                         if (_progressUI != null) _progressUI.UpdateProgress(0f);
                         
-                        // Napomena: NE gasimo zvuk ovdje, kako bi se čuo tvoj "ding" na kraju fajla!
+                       
                     }
                 }
                 else if (Input.GetMouseButtonUp(0))
@@ -69,7 +69,7 @@ public class CoffeeGrinder : MonoBehaviour
                     currentGrindTimer = 0f; 
                     if (_progressUI != null) _progressUI.UpdateProgress(0f);
                     
-                    // --- NOVO: Ako igrač pusti klik PRIJE vremena, nasilno gasi zvuk da ne čujemo "ding" lažno! ---
+                   
                     if (grinderAudio != null) grinderAudio.Stop();
                 }
             }

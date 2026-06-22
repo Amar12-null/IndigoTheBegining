@@ -49,7 +49,7 @@ namespace Indigo.Game
         {
             if (Indigo.UI.UIEvents.IsPaused) return;
 
-            // --- NOVO: Ako je dan u pripremi, slušamo pritisak na tipku 'S' ---
+            //  Ako je dan u pripremi, slušamo pritisak na tipku 'S' ---
             if (Phase == DayPhase.PreDay)
             {
                 if (Input.GetKeyDown(KeyCode.S))
